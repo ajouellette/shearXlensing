@@ -12,3 +12,5 @@ dependencies:
   - scipy==1.13.1
   - ipykernel
   - h5py
+  - fitsio
+  - joblib
