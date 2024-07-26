@@ -1,18 +1,23 @@
 import numpy as np
 import h5py
 from astropy import table
+import joblib
 
 
 class DESY3ShearCat:
 
     cat_shears = ["1p", "1m", "2p", "2m"]
 
+    @classmethod
+    def load_from_pkl(cls, filename):
+        return joblib.load(filename)
+
     def __init__(self, index_file, zbin=None, group_name="catalog/metacal",
                  load_cols=["coadd_object_id", "ra", "dec", "e_1", "e_2", "weight"], dg=0.01):
         self.index_file = index_file
         self.dg = dg
         self.zbin = zbin
-        self.name = "DES Y3 source catalog" + '' if zbin is None else f" (z-bin {zbin})"
+        self.name = "DES Y3 source catalog" + ('' if zbin is None else f" (z-bin {zbin})")
 
         self.table_name = f"{group_name}/unsheared"
         self.tables_sheared = {s: f"{group_name}/sheared_{s}" for s in self.cat_shears}
@@ -22,6 +27,9 @@ class DESY3ShearCat:
         with h5py.File(index_file) as index:
             cols = {col: index[self.table_name][col][:][self.sel_inds] for col in load_cols}
         self.data = table.Table(data=cols)
+
+    def __repr__(self):
+        return self.name + '\n' + repr(self.data)
 
     def get_selection(self, zbin=None, shear=None):
         """Return indicies of source galaxies within a given selection."""
@@ -91,16 +99,16 @@ class DESY3ShearCat:
             print("Elipticity response already calibrated")
             return [0,0], 1
 
-        mean_e = [np.average(self.data[f"e_{i}"], weights=self.data["weight"]) for i in [1, 2]]
+        mean_e = np.array([np.average(self.data[f"e_{i}"], weights=self.data["weight"]) for i in [1, 2]])
         if verbose:
-            print("mean e:", mean_e)
+            print("\tmean e:", mean_e)
 
         Rg = self.shear_response()
         if verbose:
-            print("shear response:", np.diag(Rg))
+            print("\tshear response:", np.diag(Rg))
         Rs = self.selection_response()
         if verbose:
-            print("selection response:", np.diag(Rs))
+            print("\tselection response:", np.diag(Rs))
         R = np.mean(np.diag(Rg + Rs))
 
         for i in [1, 2]:
