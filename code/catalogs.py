@@ -29,7 +29,7 @@ class DESY3ShearCat:
         self.data = table.Table(data=cols)
 
     def __repr__(self):
-        return self.name + '\n' + repr(self.data)
+        return f"{self.name}, Ngal = {len(self.data)}"
 
     def get_selection(self, zbin=None, shear=None):
         """Return indicies of source galaxies within a given selection."""
