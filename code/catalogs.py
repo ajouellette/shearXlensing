@@ -1,7 +1,9 @@
 import numpy as np
 import h5py
+import fitsio
 from astropy import table
 import joblib
+import pymaster as nmt
 
 
 class DESY3ShearCat:
@@ -15,6 +17,7 @@ class DESY3ShearCat:
     def __init__(self, index_file, zbin=None, group_name="catalog/metacal",
                  load_cols=["coadd_object_id", "ra", "dec", "e_1", "e_2", "weight"], dg=0.01):
         self.index_file = index_file
+        self.data_dir = '/'.join(index_file.split('/')[:-1])
         self.dg = dg
         self.zbin = zbin
         self.name = "DES Y3 source catalog" + ('' if zbin is None else f" (z-bin {zbin})")
@@ -24,12 +27,33 @@ class DESY3ShearCat:
 
         self.sel_inds = self.get_selection(zbin=zbin)
 
+        # create data table
         with h5py.File(index_file) as index:
             cols = {col: index[self.table_name][col][:][self.sel_inds] for col in load_cols}
         self.data = table.Table(data=cols)
 
+        # calibrate shear
+        self.mean_e, self.R = self.calibrate()
+
     def __repr__(self):
         return f"{self.name}, Ngal = {len(self.data)}"
+
+    def rotate_shear(self):
+        """Rotate all shears by random angles."""
+        phi = 2*np.pi * np.random.rand(len(self.data))
+        c = np.cos(2*phi)
+        s = np.sin(2*phi)
+        return [c * self.data["g_1"] + s * self.data["g_2"],
+                -s * self.data["g_1"] + c * self.data["g_2"]]
+
+    def nmt_catalog(self, lmax, lmax_mask=None, rot=False):
+        """Setup a NmtFieldCatalog object."""
+        if rot:
+            field = self.rotate_shear()
+        else:
+            field = [self.data["g_1"], self.data["g_2"]]
+        return nmt.NmtFieldCatalog([self.data["ra"], self.data["dec"]], self.data["weight"],
+                                   [-field[0], field[1]], lmax, lmax_mask=lmax_mask, spin=2, lonlat=True)
 
     def get_selection(self, zbin=None, shear=None):
         """Return indicies of source galaxies within a given selection."""
@@ -117,5 +141,13 @@ class DESY3ShearCat:
 
         return mean_e, R
 
-    def get_dndz(self):
-        pass
+    def get_dndz(self, product_dir="../datavectors"):
+        datavecs = fitsio.FITS(f"{self.data_dir}/{product_dir}/2pt_NG_final_2ptunblind_02_26_21_wnz_maglim_covupdate.fits")
+        z = datavecs["nz_source"]["Z_MID"][:][:-1]
+        dndzs = np.array([datavecs["nz_source"][f"BIN{i}"][:] for i in range(1, 5)])
+        if self.zbin is not None:
+            return z, dndzs[self.zbin-1]
+
+        ngal = np.array([datavecs["nz_source"].read_header()[f"NGAL_{i}"] for i in range(1,5)])
+        dndz_total = np.sum([ngal[i] * dndzs[i] for i in range(4)], axis=0) / np.sum(ngal)
+        return z, dndz_total
