@@ -19,21 +19,21 @@ def main():
     print("saving catalogs to:", save_dir, '\n')
     os.makedirs(save_dir, exist_ok=True)
 
-    for zbin in range(1, 5):
-        print("z-bin", zbin)
+    for zbin in [1, 2, 3, 4, None]:
+        if zbin is not None:
+            print("z-bin", zbin)
+        else:
+            print("Combined bin")
 
-        print("loading catalog...")
+        print("loading catalog and calibrating...")
         cat = DESY3ShearCat(index_file, zbin=zbin)
         print(len(cat.data), "galaxies")
-
-        print("calibrating...")
-        mean_e, R = cat.calibrate()
-        print("total multiplicative bias:", R)
+        print("total multiplicative bias:", cat.R)
 
         print("writing catalog...")
         joblib.dump(cat, f"{save_dir}/DESY3_shearcat_zbin{zbin}.pkl")
 
-        if zbin < 4:
+        if zbin is not None:
             print()
 
 
