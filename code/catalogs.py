@@ -15,7 +15,8 @@ class DESY3ShearCat:
         return joblib.load(filename)
 
     def __init__(self, index_file, zbin=None, group_name="catalog/metacal",
-                 load_cols=["coadd_object_id", "ra", "dec", "e_1", "e_2", "weight"], dg=0.01):
+                 load_cols=["coadd_object_id", "ra", "dec", "e_1", "e_2", "psf_e1", "psf_e2", "weight"],
+                 dg=0.01):
         self.index_file = index_file
         self.data_dir = '/'.join(index_file.split('/')[:-1])
         self.dg = dg
@@ -46,12 +47,15 @@ class DESY3ShearCat:
         return [c * self.data["g_1"] + s * self.data["g_2"],
                 -s * self.data["g_1"] + c * self.data["g_2"]]
 
-    def nmt_catalog(self, lmax, lmax_mask=None, rot=False):
+    def nmt_catalog(self, lmax, lmax_mask=None, rot=False, psf=False):
         """Setup a NmtFieldCatalog object."""
-        if rot:
-            field = self.rotate_shear()
+        if not psf:
+            if rot:
+                field = self.rotate_shear()
+            else:
+                field = [self.data["g_1"], self.data["g_2"]]
         else:
-            field = [self.data["g_1"], self.data["g_2"]]
+            field = [self.data["psf_e1"], self.data["psf_e2"]]
         return nmt.NmtFieldCatalog([self.data["ra"], self.data["dec"]], self.data["weight"],
                                    [-field[0], field[1]], lmax, lmax_mask=lmax_mask, spin=2, lonlat=True)
 
