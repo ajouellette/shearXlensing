@@ -1,0 +1,43 @@
+nside: 2048
+# constructs linear bins between ell_min and 3*nside with delta_ell spacing
+ell_min: 100
+delta_ell: 300
+# place to save namaster workspaces
+wksp_dir: "/projects/caps/aaronjo2/shearXlensing/workspaces"
+# specific x-spectra to calculate
+calculate_xspectra:
+    - [tracer_wl, tracer_ck]
+    - [tracer_wl, tracer_ck_pol]
+
+# specify tracers
+# each tracer can have multiple tomographic bins
+# can use python format strings to specify location of maps/masks
+#   known variables: bin and nside
+tracer_wl:
+    name: "DES-Y3 shear"
+    bins: 4
+    data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/maps"
+    map: "DESY3_zbin{bin}_nside{nside}_shearmaps.fits"
+    mask: "DESY3_zbin{bin}_nside{nside}_mask.fits"
+    # Fix sign convention for e1/e2 to that of Q/U: (e1, e2) -> (-e1, e2)
+    correct_qu_sign: True
+
+tracer_ck:
+    name: "SPT-3G CMB convergence"
+    data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
+    map: "kmapxx_0_mfhalf1.fits"
+    mask: "mask2048_border_apod_mask_threshold0.1_allghz_dense_1500d_eetelensing-1920_mapmaking_mask_list_fluxcut6mJy_clusterSNcut10_dense_mb2_mp1_mfbadpixrm.fits"
+    # square mask for CMB lensing field
+    use_mask_squared: True
+
+tracer_ck_pol:
+    name: "SPT-3G pol-only CMB convergence"
+    data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
+    map: "kmapxx_kPP_0_mfhalf1.fits"
+    mask: "mask2048_border_apod_mask_threshold0.1_allghz_dense_1500d_eetelensing-1920_mapmaking_mask_list_fluxcut6mJy_clusterSNcut10_dense_mb2_mp1_mfbadpixrm.fits"
+    # square mask for CMB lensing field
+    use_mask_squared: True
+
+# save output as a sacc file
+sacc:
+    overwrite: True
