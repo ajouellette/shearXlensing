@@ -5,6 +5,7 @@ import numpy as np
 import healpy as hp
 import pymaster as nmt
 import joblib
+import sacc
 
 
 def get_ell_bins(config):
@@ -12,7 +13,7 @@ def get_ell_bins(config):
     nside = config["nside"]
     ell_min = config["ell_min"]
     dl = config["delta_ell"]
-    ell_bins = np.arange(ell_min, 3*nside, dl)
+    ell_bins = np.linspace(ell_min, 3*nside, int((3*nside - ell_min) / dl) + 1, dtype=int)
     return ell_bins
 
 
@@ -60,6 +61,14 @@ def get_tracer(config, key):
     return tracer_bins
 
 
+def parse_tracer_bin(tracer_bin_key):
+    """Takes a string of the form tracer_name_{int} and returns tracer_name, int."""
+    key_split = tracer_bin_key.split('_')
+    tracer_name = '_'.join(key_split[:-1])
+    tracer_bin = int(key_split[-1])
+    return tracer_name, tracer_bin
+
+
 def get_workspace(wksp_dir, nmt_field1, nmt_field2, ell_bins):
     """Get the NmtWorkspace for given fields and bins (with caching)."""
     # hash based on masks, beams, and bins
@@ -71,7 +80,7 @@ def get_workspace(wksp_dir, nmt_field1, nmt_field2, ell_bins):
         wksp = nmt.NmtWorkspace.from_file(wksp_file)
     except RuntimeError:
         os.makedirs(f"{wksp_dir}/cl", exist_ok=True)
-        bins = nmt.NmtBins.from_edges(ell_bins[:-1], ell_bins[1:])
+        bins = nmt.NmtBin.from_edges(ell_bins[:-1], ell_bins[1:])
         wksp = nmt.NmtWorkspace.from_fields(nmt_field1, nmt_field2, bins)
         wksp.write_to(wksp_file)
 
@@ -104,6 +113,33 @@ def get_cov_workspace(wksp_dir, nmt_field1a, nmt_field2a, nmt_field1b=None, nmt_
     return wksp
 
 
+def compute_cl(wksp_dir, nmt_field1, nmt_field2, ell_bins):
+    """Calculate the x-spectrum between tracer1 and tracer2."""
+    wksp = get_workspace(wksp_dir, nmt_field1, nmt_field2, ell_bins)
+    pcl = nmt.compute_coupled_cell(nmt_field1, nmt_field2)
+    cl = wksp.decouple_cell(pcl)
+    return cl
+
+
+def compute_gaussian_cov(wksp_dir, nmt_field1a, nmt_field2a, nmt_field1b, nmt_field2b, ell_bins):
+    """Compute the Gaussian covariance between powerspectra A and B."""
+    cov_wksp = get_cov_workspace(wksp_dir, nmt_field1a, nmt_field2a, nmt_field1b, nmt_field2b)
+    wksp_a = get_workspace(wksp_dir, nmt_field1a, nmt_field2a, ell_bins)
+    wksp_b = get_workspace(wksp_dir, nmt_field1b, nmt_field2b, ell_bins)
+    spins = [nmt_field1a.spin, nmt_field2a.spin, nmt_field1b.spin, nmt_field2b.spin]
+    pcl1a1b = nmt.compute_coupled_cell(nmt_field1a, nmt_field1b) / np.mean(nmt_field1a.get_mask() *
+                                                                           nmt_field1b.get_mask())
+    pcl2a1b = nmt.compute_coupled_cell(nmt_field2a, nmt_field1b) / np.mean(nmt_field2a.get_mask() *
+                                                                           nmt_field1b.get_mask())
+    pcl1a2b = nmt.compute_coupled_cell(nmt_field1a, nmt_field2b) / np.mean(nmt_field1a.get_mask() *
+                                                                           nmt_field2b.get_mask())
+    pcl2a2b = nmt.compute_coupled_cell(nmt_field2a, nmt_field2b) / np.mean(nmt_field2a.get_mask() *
+                                                                           nmt_field2b.get_mask())
+    cov = nmt.gaussian_covariance(cov_wksp, *spins, pcl1a1b, pcl2a1b, pcl1a2b, pcl2a2b,
+                                  wksp_a, wksp_b)
+    return cov
+
+
 def save_sacc(config):
     pass
 
@@ -114,32 +150,92 @@ def main():
 
     print(config)
 
-    tracer_keys = [key for key in config.keys() if key.startswith("tracer") ]
+    tracer_keys = [key for key in config.keys() if key.startswith("tracer")]
     print(f"Found {len(tracer_keys)} tracers")
     tracers = dict()
     for tracer_key in tracer_keys:
         tracer = get_tracer(config, tracer_key)
         tracers[tracer_key] = tracer
 
-    print(tracers)
+    xspec_keys = [key for key in config.keys() if key.startswith("cross_spectra")]
+    print(f"Found {len(xspec_keys)} set(s) of cross-spectra to calculate")
 
-    xspectra = config["calculate_xspecta"]
-    print(f"Found {len(xspectra)} x-spectra to calculate")
+    ell_bins = get_ell_bins(config)
+    nmt_bins = nmt.NmtBin.from_edges(ell_bins[:-1], ell_bins[1:])
+    ell_eff = nmt_bins.get_effective_ells()
+    print(f"Will calculate {len(ell_eff)} bandpowers between ell = {ell_bins[0]} and ell = {ell_bins[-1]}")
+    wksp_dir = config["workspace_dir"]
 
-    for xspec in xspectra:
-        print(xspec)
-        if xspec[0] not in tracer_keys or xspec[1] not in tracer_keys:
-            raise ValueError(f"Unknown tracer in x-spectrum {xspec}, make sure all tracers are defined in the yaml file")
+    xspec_sets = dict()
+    for xspec_key in xspec_keys:
+        xspec_list = config[xspec_key]["list"]
+        print("Computing set", xspec_list)
 
-        tracer1 = tracers[xspec[0]]
-        tracer2 = tracers[xspec[1]]
+        calc_cov = False
+        calc_interbin_cov = False
+        if "covariance" in config[xspec_key].keys():
+            calc_cov = config[xspec_key]["covariance"]
+        if "interbin_cov" in config[xspec_key].keys():
+            calc_interbin_cov = config[xspec_key]["interbin_cov"]
 
-        ell_bins = get_ell_bins(config)
-        bins = nmt.NmtBin.from_edges(ell_bins[:-1], ell_bins[1:])
+        cls = dict()
+        # compute each cross-spectrum in the set
+        for xspec in xspec_list:
+            if xspec[0] not in tracer_keys or xspec[1] not in tracer_keys:
+                raise ValueError(f"Undefined tracer in x-spectrum {xspec}")
 
-        wksp_dir = config["workspace_dir"]
-        print("Getting workspace")
-        wksp = get_workspace(wksp_dir, tracer1["nmt_field"], tracer2["nmt_field"], ell_bins)
+            tracer1 = tracers[xspec[0]]
+            tracer2 = tracers[xspec[1]]
+
+            # loop over all tracer bins:
+            for i in range(len(tracer1)):
+                for j in range(len(tracer2)):
+                    cl_key = (xspec[0]+f"_{i}", xspec[1]+f"_{j}")
+                    print("Computing cross-spectrum", cl_key)
+                    cl = compute_cl(wksp_dir, tracer1[i]["nmt_field"], tracer2[j]["nmt_field"], ell_bins)
+                    cls[cl_key] = cl
+
+        # compute covariance for all pairs of cross-spectra in set
+        covs = dict()
+        cl_keys = list(cls.keys())
+        # double loop over cl_keys
+        for i in range(len(cl_keys)):
+            cl_key1 = cl_keys[i]
+            tracer1, bin1 = parse_tracer_bin(cl_key1[0])
+            tracer2, bin2 = parse_tracer_bin(cl_key1[1])
+            nmt_field1a = tracers[tracer1][bin1]["nmt_field"]
+            nmt_field2a = tracers[tracer2][bin2]["nmt_field"]
+            for j in range(i, len(cl_keys)):
+                cl_key2 = cl_keys[j]
+                cov_key = (cl_key1[0], cl_key1[1], cl_key2[0], cl_key2[1])
+                print("Computing covariance", cov_key)
+                tracer1, bin1 = parse_tracer_bin(cl_key2[0])
+                tracer2, bin2 = parse_tracer_bin(cl_key2[1])
+                nmt_field1b = tracers[tracer1][bin1]["nmt_field"]
+                nmt_field2b = tracers[tracer2][bin2]["nmt_field"]
+
+                cov = compute_gaussian_cov(wksp_dir, nmt_field1a, nmt_field2a,
+                                           nmt_field1b, nmt_field2b, ell_bins)
+                covs[cov_key] = cov
+
+        xspec_sets[xspec_key] = dict(cls=cls, covs=covs)
+
+    # save all cross-spectra
+    if "save_npz" in config.keys():
+        # each set of cross-spectra goes in a different file
+        for xspec_key in xspec_keys:
+            save_npz_file = config["save_npz"].format(set_name=xspec_key)
+            print("Saving to", save_npz_file)
+            cl_dict = xspec_sets[xspec_key]["cls"]
+            cov_dict = xspec_sets[xspec_key]["covs"]
+            save_dict = {"cl_" + str(cl_key): cl_dict[cl_key] for cl_key in cl_dict.keys()} | \
+                        {"cov_" + str(cov_key): cov_dict[cov_key] for cov_key in cov_dict.keys()} | \
+                        {"ell_eff": ell_eff}
+            np.savez(save_npz_file, **save_dict)
+
+    # create sacc file
+    if "save_sacc" in config.keys():
+        print("Creating sacc file")
 
 
 if __name__ == "__main__":

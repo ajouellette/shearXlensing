@@ -1,13 +1,9 @@
-nside: 2048
+nside: 1024
 # constructs linear bins between ell_min and 3*nside with delta_ell spacing
 ell_min: 100
 delta_ell: 300
 # place to save namaster workspaces
-wksp_dir: "/projects/caps/aaronjo2/shearXlensing/workspaces"
-# specific x-spectra to calculate
-calculate_xspectra:
-    - [tracer_wl, tracer_ck]
-    - [tracer_wl, tracer_ck_pol]
+workspace_dir: "/projects/caps/aaronjo2/shearXlensing/workspaces"
 
 # specify tracers
 # each tracer can have multiple tomographic bins
@@ -25,19 +21,35 @@ tracer_wl:
 tracer_ck:
     name: "SPT-3G CMB convergence"
     data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
-    map: "kmapxx_0_mfhalf1.fits"
-    mask: "mask2048_border_apod_mask_threshold0.1_allghz_dense_1500d_eetelensing-1920_mapmaking_mask_list_fluxcut6mJy_clusterSNcut10_dense_mb2_mp1_mfbadpixrm.fits"
+    map: "kmapxx_0_mfhalf1_{nside}.fits"
+    mask: "mask{nside}_border_apod_mask.fits"
     # square mask for CMB lensing field
     use_mask_squared: True
 
-tracer_ck_pol:
-    name: "SPT-3G pol-only CMB convergence"
-    data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
-    map: "kmapxx_kPP_0_mfhalf1.fits"
-    mask: "mask2048_border_apod_mask_threshold0.1_allghz_dense_1500d_eetelensing-1920_mapmaking_mask_list_fluxcut6mJy_clusterSNcut10_dense_mb2_mp1_mfbadpixrm.fits"
-    # square mask for CMB lensing field
-    use_mask_squared: True
+# specify sets of cross-spectra (and corresponding covariances) to calculate
+cross_spectra:
+    # specific x-spectra to calculate given as tuples of 2 tracers
+    list:
+        - [tracer_wl, tracer_ck]
+    # calculate covariance
+    covariance: True
+    interbin_cov: True
 
-# save output as a sacc file
-sacc:
-    overwrite: True
+#cross_spectra_psf:
+#    list:
+#        - [tracer_wl_psf, tracer_ck]
+#    covariance: True
+
+# save all cls and covs in a .npz file
+# simply dumps full namaster output without any post-processing
+# keys: ell_eff, cls, covs, bpws
+# each set of cross-spectra is saved to a different file
+save_npz: "test_{set_name}.npz"
+
+# save select cls and their full cov (+ tracer info) in a sacc file
+save_sacc:
+    save_xspectra:
+        - [tracer_wl_e, tracer_cl]
+    metadata:
+        description: "SPT-3G CMB lensing X DES-Y3 shear"
+    file: "test_sacc.fits"
