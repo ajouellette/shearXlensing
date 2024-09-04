@@ -166,7 +166,6 @@ def main():
     print(f"Will calculate {len(ell_eff)} bandpowers between ell = {ell_bins[0]} and ell = {ell_bins[-1]}")
     wksp_dir = config["workspace_dir"]
 
-    xspec_sets = dict()
     for xspec_key in xspec_keys:
         xspec_list = config[xspec_key]["list"]
         print("Computing set", xspec_list)
@@ -218,24 +217,18 @@ def main():
                                            nmt_field1b, nmt_field2b, ell_bins)
                 covs[cov_key] = cov
 
-        xspec_sets[xspec_key] = dict(cls=cls, covs=covs)
-
-    # save all cross-spectra
-    if "save_npz" in config.keys():
-        # each set of cross-spectra goes in a different file
-        for xspec_key in xspec_keys:
-            save_npz_file = config["save_npz"].format(set_name=xspec_key)
+        # save all cross-spectra
+        if "save_npz" in config.keys():
+            save_npz_file = config[xspec_key]["save_npz"].format(nside=config["nside"])
             print("Saving to", save_npz_file)
-            cl_dict = xspec_sets[xspec_key]["cls"]
-            cov_dict = xspec_sets[xspec_key]["covs"]
-            save_dict = {"cl_" + str(cl_key): cl_dict[cl_key] for cl_key in cl_dict.keys()} | \
-                        {"cov_" + str(cov_key): cov_dict[cov_key] for cov_key in cov_dict.keys()} | \
+            save_dict = {"cl_" + str(cl_key): cl_dict[cl_key] for cl_key in cls.keys()} | \
+                        {"cov_" + str(cov_key): cov_dict[cov_key] for cov_key in covs.keys()} | \
                         {"ell_eff": ell_eff}
             np.savez(save_npz_file, **save_dict)
 
-    # create sacc file
-    if "save_sacc" in config.keys():
-        print("Creating sacc file")
+        # create sacc file
+        #if "save_sacc" in config.keys():
+            #print("Creating sacc file")
 
 
 if __name__ == "__main__":

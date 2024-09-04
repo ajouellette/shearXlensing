@@ -34,22 +34,17 @@ cross_spectra:
     # calculate covariance
     covariance: True
     interbin_cov: True
+    # save all cls and covs in a .npz file
+    # simply dumps full namaster output without any post-processing
+    save_npz: "cross_spectra_nside{nside}.npz"
+    # save select cls and their full cov (+ tracer info) in a sacc file
+    save_sacc:
+        ignore_b_modes: True
+        metadata:
+            description: "SPT-3G CMB lensing X DES-Y3 shear"
+        file: "cross_spectra_nside{nside}.fits"
 
 #cross_spectra_psf:
 #    list:
 #        - [tracer_wl_psf, tracer_ck]
 #    covariance: True
-
-# save all cls and covs in a .npz file
-# simply dumps full namaster output without any post-processing
-# keys: ell_eff, cls, covs, bpws
-# each set of cross-spectra is saved to a different file
-save_npz: "test_{set_name}.npz"
-
-# save select cls and their full cov (+ tracer info) in a sacc file
-save_sacc:
-    save_xspectra:
-        - [tracer_wl_e, tracer_cl]
-    metadata:
-        description: "SPT-3G CMB lensing X DES-Y3 shear"
-    file: "test_sacc.fits"
