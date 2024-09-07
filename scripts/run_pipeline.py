@@ -113,11 +113,13 @@ def get_cov_workspace(wksp_dir, nmt_field1a, nmt_field2a, nmt_field1b=None, nmt_
     return wksp
 
 
-def compute_cl(wksp_dir, nmt_field1, nmt_field2, ell_bins):
+def compute_cl(wksp_dir, nmt_field1, nmt_field2, ell_bins, return_bpw=False):
     """Calculate the x-spectrum between tracer1 and tracer2."""
     wksp = get_workspace(wksp_dir, nmt_field1, nmt_field2, ell_bins)
     pcl = nmt.compute_coupled_cell(nmt_field1, nmt_field2)
     cl = wksp.decouple_cell(pcl)
+    if return_bpw:
+        return cl, wksp.get_bandpower_windows()
     return cl
 
 
@@ -144,6 +146,16 @@ def save_sacc(config):
     pass
 
 
+def save_npz(file_name, ell_eff, cls, covs, bpws):
+    """Save cross-spectra, covariances, and bandpower windows to a .npz file."""
+    assert bpws.keys() == cls.keys() "Each cross-spectrum should have a corresponding bandpower window"
+    save_dict = {"cl_" + str(cl_key): cls[cl_key] for cl_key in cls.keys()} | \
+                {"cov_" + str(cov_key): covs[cov_key] for cov_key in covs.keys()} | \
+                {"bpw_" + str(cl_key): bpws[cl_key] for cl_key in cls.keys()} | \
+                {"ell_eff": ell_eff}
+    np.savez(save_npz_file, **save_dict)
+
+
 def main():
     with open(sys.argv[1]) as f:
         config = yaml.full_load(f)
@@ -159,6 +171,9 @@ def main():
 
     xspec_keys = [key for key in config.keys() if key.startswith("cross_spectra")]
     print(f"Found {len(xspec_keys)} set(s) of cross-spectra to calculate")
+    for xspec_key in xspec_keys:
+        if "save_npz" not in config[xspec_key].keys() and "save_sacc" not in config[xspec_key].keys():
+            print(f"Warning! No output will be saved for the block {xspec_key}")
 
     ell_bins = get_ell_bins(config)
     nmt_bins = nmt.NmtBin.from_edges(ell_bins[:-1], ell_bins[1:])
@@ -178,6 +193,7 @@ def main():
             calc_interbin_cov = config[xspec_key]["interbin_cov"]
 
         cls = dict()
+        bpws = dict()
         # compute each cross-spectrum in the set
         for xspec in xspec_list:
             if xspec[0] not in tracer_keys or xspec[1] not in tracer_keys:
@@ -191,8 +207,9 @@ def main():
                 for j in range(len(tracer2)):
                     cl_key = (xspec[0]+f"_{i}", xspec[1]+f"_{j}")
                     print("Computing cross-spectrum", cl_key)
-                    cl = compute_cl(wksp_dir, tracer1[i]["nmt_field"], tracer2[j]["nmt_field"], ell_bins)
+                    cl, bpw = compute_cl(wksp_dir, tracer1[i]["nmt_field"], tracer2[j]["nmt_field"], ell_bins, return_bpw=True)
                     cls[cl_key] = cl
+                    bpws[cl_key] = bpw
 
         # compute covariance for all pairs of cross-spectra in set
         covs = dict()
@@ -221,10 +238,7 @@ def main():
         if "save_npz" in config.keys():
             save_npz_file = config[xspec_key]["save_npz"].format(nside=config["nside"])
             print("Saving to", save_npz_file)
-            save_dict = {"cl_" + str(cl_key): cl_dict[cl_key] for cl_key in cls.keys()} | \
-                        {"cov_" + str(cov_key): cov_dict[cov_key] for cov_key in covs.keys()} | \
-                        {"ell_eff": ell_eff}
-            np.savez(save_npz_file, **save_dict)
+            save_npz(ell_eff, cls, covs, bpws)
 
         # create sacc file
         #if "save_sacc" in config.keys():
