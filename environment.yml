@@ -16,3 +16,6 @@ dependencies:
   - joblib
   - tqdm
   - sacc
+  - emcee
+  - cosmosis
+  - cosmosis-build-standard-library
