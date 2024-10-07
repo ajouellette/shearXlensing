@@ -1,0 +1,62 @@
+nside: 2048
+# same binning as Doux et al 2022
+binning:
+    bpw_edges: [7.5, 17.5, 30.5, 46.5, 66.5, 89.5, 116.5, 146.5, 180.5, 217.5, 258.5,
+                303.5, 351.5, 402.5, 457.5, 516.5, 578.5, 643.5, 712.5, 785.5, 861.5,
+                940.5, 1023.5, 1110.5, 1200.5, 1294.5, 1391.5, 1491.5, 1596.5, 1703.5,
+                1815.5, 1929.5, 2048.5]
+    #kind: sqrt
+    #ell_min: 8
+    #ell_max: 2048
+    #nbpws: 32
+workspace_dir: "/home/aaronjo2/scratch/nmt_workspaces"
+
+tracers:
+    wl:
+        name: "DES-Y3 shear maps"
+        bins: 4
+        data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/maps"
+        beam: pixwin
+        healpix:
+            map: "DESY3_zbin{bin}_nside{nside}_shearmaps.fits"
+            mask: "DESY3_zbin{bin}_nside{nside}_mask.fits"
+            noise_est: [2.346129e-4, 2.213803e-4, 1.466034e-4, 9.738680e-5]
+        # Fix sign convention for e1/e2 to that of Q/U: (e1, e2) -> (-e1, e2)
+        correct_qu_sign: True
+
+    #wl_psf:
+    #    name: "DES-Y3 PSF ellipticity maps"
+    #    bins: 4
+    #    data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/maps"
+    #    healpix:
+    #        map: "DESY3_zbin{bin}_nside{nside}_psfmaps.fits"
+    #        mask: "DESY3_zbin{bin}_nside{nside}_mask.fits"
+    #    correct_qu_sign: True
+
+    wl_cat:
+        name: "DES-Y3 shear catalogs"
+        bins: 4
+        data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/calibrated_catalogs"
+        catalog:
+            file: "DESY3_shearcat_zbin{bin}.fits"
+            fields: ["g_1", "g_2"]
+        correct_qu_sign: True
+
+cross_spectra:
+    list:
+        - [wl, wl]
+    subtract_noise: True
+    covariance: True
+    interbin_cov: True
+    save_npz: "data/cross_cls/shear_auto_spectra_nside{nside}.npz"
+
+cross_spectra_cat:
+    list:
+        - [wl_cat, wl_cat]
+    save_npz: "data/cross_cls/shear_auto_spectra_nside{nside}_catalog.npz"
+
+#cross_spectra_wl_psf:
+#    list:
+#        - [tracer_wl_psf, tracer_wl]
+#    covariance: True
+#    interbin_cov: False
