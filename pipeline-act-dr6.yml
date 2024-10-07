@@ -49,14 +49,14 @@ tracers:
 # specify sets of cross-spectra (and corresponding covariances) to calculate
 cross_spectra:
     list:
-        - [tracer_ck, tracer_wl]
+        - [ck, wl]
     covariance: True
     interbin_cov: True
     save_npz: "data/cross_cls/cross_spectra_actdr6_nside{nside}.npz"
 
 cross_spectra_pol:
     list:
-        - [tracer_ck_pol, tracer_wl]
+        - [ck_pol, wl]
     covariance: True
     interbin_cov: True
     save_npz: "data/cross_cls/cross_spectra_actdr6_pol_nside{nside}.npz"
