@@ -17,8 +17,8 @@ def make_map(nside, ra, dec, vals=None):
 
 def main():
 
-    nside = 1024
-    overwrite = True
+    nside = 2048
+    overwrite = False
 
     if len(sys.argv) < 2:
         print("Must specify location of DES Y3 calibrated catalogs")
@@ -46,6 +46,12 @@ def main():
         for g_map in g_maps:
             g_map[mask] = g_map[mask] / w_map[mask]
 
+        # calculate shot noise
+        sigma2_e_cat = (cat.data["g_1"]**2 + cat.data["g_2"]**2) / 2
+        w2_sigma2_map = make_map(nside, cat.data["ra"], cat.data["dec"], vals=cat.data["weight"]**2 * sigma2_e_cat)
+        shot_noise = hp.nside2pixarea(nside) * np.mean(w2_sigma2_map)
+        print(f"Shot noise in auto pseudo-Cl: {shot_noise:.5e}")
+
         # psf elipticity maps
         psf_maps = [make_map(nside, cat.data["ra"], cat.data["dec"],
                     vals=cat.data[f"psf_e{i}"] * cat.data["weight"]) for i in [1, 2]]
@@ -54,9 +60,18 @@ def main():
 
         save_name = f"{save_dir}/DESY3_zbin{cat.zbin}_nside{nside}"
 
-        hp.write_map(save_name + "_shearmaps.fits", g_maps, column_names=["g1", "g2"], overwrite=overwrite)
-        hp.write_map(save_name + "_psfmaps.fits", psf_maps, column_names=["psf_e1", "psf_e2"], overwrite=overwrite)
-        hp.write_map(save_name + "_mask.fits", w_map, overwrite=overwrite)
+        try:
+            hp.write_map(save_name + "_shearmaps.fits", g_maps, column_names=["g1", "g2"], overwrite=overwrite)
+        except OSError:
+            pass
+        try:
+            hp.write_map(save_name + "_psfmaps.fits", psf_maps, column_names=["psf_e1", "psf_e2"], overwrite=overwrite)
+        except OSError:
+            pass
+        try:
+            hp.write_map(save_name + "_mask.fits", w_map, overwrite=overwrite)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":
