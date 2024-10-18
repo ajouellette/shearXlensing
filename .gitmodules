@@ -1,0 +1,3 @@
+[submodule "cosmosis-standard-library"]
+	path = cosmosis-standard-library
+	url = https://github.com/ajouellette/cosmosis-standard-library
