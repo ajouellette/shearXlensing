@@ -20,7 +20,8 @@ tracers:
         healpix:
             map: "DESY3_zbin{bin}_nside{nside}_shearmaps.fits"
             mask: "DESY3_zbin{bin}_nside{nside}_mask.fits"
-            noise_est: [2.346129e-4, 2.213803e-4, 1.466034e-4, 9.738680e-5]
+            #noise_est: [2.346129e-4, 2.213803e-4, 1.466034e-4, 9.738680e-5]  # 1024
+            noise_est: [1.46633e-05, 1.38363e-05, 9.16271e-06, 6.08668e-06]  # 2048
         # Fix sign convention for e1/e2 to that of Q/U: (e1, e2) -> (-e1, e2)
         correct_qu_sign: True
 

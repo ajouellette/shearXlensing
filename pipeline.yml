@@ -70,7 +70,6 @@ cross_spectra:
     save_npz: "data/cross_cls/cross_spectra_nside{nside}.npz"
     # save select cls and their full cov (+ tracer info) in a sacc file
     save_sacc:
-        ignore_b_modes: True
         metadata:
             description: "SPT-3G CMB lensing X DES-Y3 shear"
         file: "data/cross_cls/cross_spectra_nside{nside}.fits"
