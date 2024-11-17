@@ -1,0 +1,69 @@
+output_dir: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/gg
+include: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/components.yml
+output_name: chain_{name}
+
+components:
+    sampler: {params: [sampler = polychord]}
+
+runs:
+    # try to replicate official results using offical data
+    - name: gg_desy3_official_des_prior
+      base: des-y3-spt-3g.ini
+      components:
+          - sampler
+      pipeline:
+          - del sacc_like pk_to_cl_shear_kappa
+          - append 2pt_like
+      params:
+          - add_intrinsic.shear-cmbkappa = F
+      submission:
+          template: &template /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/slurm_template.sh
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    # IA model variations using offical data
+    - name: gg_desy3_official_des_prior_nla
+      parent: gg_desy3_official_des_prior
+      components:
+          - nla_ia
+      submission:
+          template: *template
+          time: 0-16:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: gg_desy3_official_des_prior_no_ia
+      parent: gg_desy3_official_des_prior_nla
+      components:
+          - no_ia
+      params:
+          - del pk_to_cl_shear.shear-intrinsic
+          - del pk_to_cl_shear.intrinsic-intrinsic
+          - del pk_to_cl_shear.intrinsicb-intrinsicb
+      submission:
+          template: *template
+          time: 0-08:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: gg_desy3_official_des_prior_gauss_ia_nla
+      parent: gg_desy3_official_des_prior_nla
+      components:
+          - ia_gaussian_priors
+      submission:
+          template: *template
+          time: 0-16:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    # using "official" data, but only Gaussian covariance
+
+    # catalog-Cls with Gaussian cov
+    - name: gg_desy3_catcls_gcov_des_prior_nla
+      parent: gg_desy3_official_des_prior_nla
+      pipeline:
+          - del 2pt_like
+          - append sacc_like
+      params:
+          - sacc_like.file = 

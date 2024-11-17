@@ -1,0 +1,104 @@
+# List of reusable components
+# no runs defined here
+runs: []
+
+components:
+    sample_s8:  # sample S8 instead of As variants
+        values:
+            - del cosmological_parameters.a_s
+            - del cosmological_parameters.log1e10As
+            - del cosmological_parameters.a_s_1e9
+            - cosmological_parameters.S_8 = 0.3  0.83  1.3
+
+    free_tau:  # sample tau
+        values:
+            - cosmological_parameters.tau = 0.0  0.0544  1.0
+
+    free_Alens:
+        values:
+            - cosmological_parameters.alens = 0.0  1.0  10.0
+
+    amod:
+        pipeline:
+            - after camb amod
+        values:
+            - amod_parameter.a_mod = 0.0  1.0  2.0
+
+    feedback:
+        params:
+            - camb.halofit_version = mead2020_feedback
+        values:
+            - halo_model_parameters.logT_agn = 7.6  7.8  8.3
+
+    no_ia:
+        pipeline:
+            - del fast_pt IA add_intrinsic
+        values:
+            - del intrinsic_alignment_parameters
+    
+    nla_ia:
+        params:
+            - IA.ia_model = nla
+        values:
+            - intrinsic_alignment_parameters.a2 = 0.0
+            - intrinsic_alignment_parameters.alpha2 = 0.0
+            - intrinsic_alignment_parameters.bias_ta = 0.0
+
+    ia_gaussian_priors:
+        priors:
+            - intrinsic_alignment_parameters.a1 = gaussian 0.0 3.0
+            - intrinsic_alignment_parameters.a2 = gaussian 0.0 3.0
+            - intrinsic_alignment_parameters.alpha1 = gaussian 0.0 3.0
+            - intrinsic_alignment_parameters.alpha2 = gaussian 0.0 3.0
+
+
+    # fiducial DES shear scale cuts for 2pt_like
+    scale_cuts_shear_2pt:
+        params:
+            - 2pt_like.angle_range_shear_cl_1_1 = 0.0 742.7
+            - 2pt_like.angle_range_shear_cl_2_1 = 0.0 341.0
+            - 2pt_like.angle_range_shear_cl_2_2 = 0.0 366.4
+            - 2pt_like.angle_range_shear_cl_3_1 = 0.0 321.9
+            - 2pt_like.angle_range_shear_cl_3_2 = 0.0 260.1
+            - 2pt_like.angle_range_shear_cl_3_3 = 0.0 300.8
+            - 2pt_like.angle_range_shear_cl_4_1 = 0.0 373.1
+            - 2pt_like.angle_range_shear_cl_4_2 = 0.0 291.5
+            - 2pt_like.angle_range_shear_cl_4_3 = 0.0 269.4
+            - 2pt_like.angle_range_shear_cl_4_4 = 0.0 367.9
+
+    # fiducial DES shear scale cuts for sacc_like
+    scale_cuts_shear_sacc:
+        params:
+            - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 742.7
+            - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 341.0
+            - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 366.4
+            - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 321.9
+            - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 260.1
+            - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 300.8
+            - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 373.1
+            - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 291.5
+            - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 269.4
+            - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 367.9
+
+    # fiducial kappa x shear scale cuts for sacc_like
+    scale_cuts_cross:
+        params:
+            - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2000.0
+            - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 2000.0
+            - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 2000.0
+            - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2000.0
+
+
+    no_scale_cuts:
+    # remove all shear scale cuts
+        params:
+          - del 2pt_like.angle_range_shear_cl_1_1
+          - del 2pt_like.angle_range_shear_cl_2_1
+          - del 2pt_like.angle_range_shear_cl_2_2
+          - del 2pt_like.angle_range_shear_cl_3_1
+          - del 2pt_like.angle_range_shear_cl_3_2
+          - del 2pt_like.angle_range_shear_cl_3_3
+          - del 2pt_like.angle_range_shear_cl_4_1
+          - del 2pt_like.angle_range_shear_cl_4_2
+          - del 2pt_like.angle_range_shear_cl_4_3
+          - del 2pt_like.angle_range_shear_cl_4_4

@@ -1,0 +1,38 @@
+output_dir: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/planck
+include: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/components.yml
+
+components:
+    # modify sampler for all runs below
+    sampler: {params: [sampler = maxlike fisher]}
+
+    des_prior:
+        params:
+            - consistency.cosmomc_theta = F
+        values:
+            - del cosmological_parameters.omch2
+            - del cosmological_parameters.ombh2
+            - del cosmological_parameters.log1e10As
+            - del cosmological_parameters.cosmomc_theta
+            - cosmological_parameters.omega_m = 0.1  0.3  0.9
+            - cosmological_parameters.omega_b = 0.03  0.049  0.07
+            - cosmological_parameters.n_s = 0.87  0.97  1.07
+            - cosmological_parameters.h0 = 0.55  0.68  0.91
+            - cosmological_parameters.A_s_1e9 = 0.5  2.4  5.0
+
+runs:
+    - name: planck_TT_planck_prior
+      base: planck_test.ini
+      components:
+          - sampler
+
+    - name: planck_TT_des_prior
+      parent: planck_TT_planck_prior
+      components:
+          - sampler
+          - des_prior
+
+    - name: planck_TT_des_prior_s8
+      parent: planck_TT_des_prior
+      components:
+          - sampler
+          - sample_s8
