@@ -26,7 +26,7 @@ if __name__ == "__main__":
     output_dir = path.join(args.sim_dir, "cross_corrs")
     os.makedirs(output_dir, exist_ok=True)
 
-    bpw_edges = nx2pt.get_bpw_edges(10, 4000, 24, "linear")
+    bpw_edges = nx2pt.get_bpw_edges(30, 3800, 24, "linear")
     bins = nx2pt.get_nmtbins(args.nside, bpw_edges)
     ell_eff = bins.get_effective_ells()
 
@@ -40,9 +40,10 @@ if __name__ == "__main__":
         print(f"Dataset: {dataset}")
         for zbin in zbins:
             print(f"z-bin: {zbin}")
-            output_file = path.join(output_dir, f"cmbk_{dataset}_shear_zbin{zbin}_nside{args.nside}_cls.npz")
+            output_file = path.join(output_dir, f"cmbk_{dataset}_shear_zbin{zbin}_nside{args.nside}_masked_on_input_cls.npz")
             if path.exists(output_file) and not args.overwrite:
                 print(f"{output_file} already exists, skipping")
+                continue
             
             cls = []
             for rot in rotations:
@@ -55,7 +56,7 @@ if __name__ == "__main__":
                 print(f"  ({t2 - t1:.1f} s)")
                 print("constructing tracers...")
                 t1 = time.perf_counter()
-                cmbk = nx2pt.MapTracer(f"CMB kappa ({dataset})", [cmbk], cmbk_mask)
+                cmbk = nx2pt.MapTracer(f"CMB kappa ({dataset})", [cmbk], cmbk_mask**2, masked_on_input=True)
                 print(cmbk)
                 shear = nx2pt.CatalogTracer(f"DES shear (bin {zbin})", [shear["ra"], shear["dec"]], shear["weight"],
                                             3*args.nside-1, fields=[shear["g_1"], shear["g_2"]])
