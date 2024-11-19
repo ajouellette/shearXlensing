@@ -35,6 +35,7 @@ if __name__ == "__main__":
     parser.add_argument("sim_dir")
     parser.add_argument("field_type")
     parser.add_argument("--lmax-save", type=int, default=5000)
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     if args.field_type not in field_types:
@@ -45,6 +46,18 @@ if __name__ == "__main__":
     print("found", len(files), args.field_type, "maps")
 
     for filename in files:
+        dirname, basename = path.split(filename)
+        dirname = path.join(dirname, "sim_alms")
+        os.makedirs(dirname, exist_ok=True)
+
+        basename, ext = path.splitext(basename)
+        basename += f"_{args.field_type}_alm" + ext
+        save_name = path.join(dirname, basename)
+
+        if path.exists(save_name) and not args.overwrite:
+            print(f"{save_name} already exists, skipping")
+            continue
+
         print("loading", filename)
         maps = field_info["load_field"](filename)
         nside = hp.npix2nside(len(maps[0])) if field_info["spin"] != 0 else hp.npix2nside(len(maps))
@@ -57,12 +70,5 @@ if __name__ == "__main__":
             #alm = hp.map2alm(maps, lmax=2*nside)
             alm = hp.map2alm(maps)
 
-        dirname, basename = path.split(filename)
-        dirname = path.join(dirname, "sim_alms")
-        os.makedirs(dirname, exist_ok=True)
-
-        basename, ext = path.splitext(basename)
-        basename += f"_{args.field_type}_alm" + ext
-        save_name = path.join(dirname, basename)
         print("saving to", save_name)
         hp.write_alm(save_name, alm, lmax=args.lmax_save, overwrite=True)
