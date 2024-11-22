@@ -1,12 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --account=caps
+##SBATCH --account=caps
+#SBATCH --account=aaronjo2-ic
 #SBATCH --time={time}
 #SBATCH --nodes={nodes}
 #SBATCH --ntasks-per-node={tasks_per_node}
 #SBATCH --mem-per-cpu=4000
 #SBATCH --job-name={job_name}
-#SBATCH --partition=caps
+##SBATCH --partition=caps
+#SBATCH --partition=IllinoisComputes
 #SBATCH --output={log}/%j.out
 #SBATCH --error={log}/%j.err
 #

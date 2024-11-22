@@ -1,5 +1,5 @@
-output_dir: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/planck
-include: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/components.yml
+output_dir: /projects/caps/aaronjo2/shearXlensing/campaigns/planck
+include: /projects/caps/aaronjo2/shearXlensing/campaigns/components.yml
 
 components:
     # modify sampler for all runs below

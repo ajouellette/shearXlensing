@@ -1,5 +1,5 @@
-output_dir: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/gg
-include: /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/components.yml
+output_dir: /projects/caps/aaronjo2/shearXlensing/campaigns/gg
+include: /projects/caps/aaronjo2/shearXlensing/campaigns/components.yml
 output_name: chain_{name}
 
 components:
@@ -17,7 +17,7 @@ runs:
       params:
           - add_intrinsic.shear-cmbkappa = F
       submission:
-          template: &template /projects/caps/aaronjo2/shearXlensing/cosmosis-campaigns/slurm_template.sh
+          template: &template /projects/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
           time: 1-00:00:00
           nodes: 1
           tasks_per_node: 40

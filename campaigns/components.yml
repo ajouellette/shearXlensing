@@ -14,7 +14,7 @@ components:
         values:
             - cosmological_parameters.tau = 0.0  0.0544  1.0
 
-    free_Alens:
+    free_Alens:  # sample A_lens
         values:
             - cosmological_parameters.alens = 0.0  1.0  10.0
 
@@ -24,19 +24,19 @@ components:
         values:
             - amod_parameter.a_mod = 0.0  1.0  2.0
 
-    feedback:
+    feedback:  # use HMCode with baryonic feedback, marginalizing over log T_agn
         params:
             - camb.halofit_version = mead2020_feedback
         values:
             - halo_model_parameters.logT_agn = 7.6  7.8  8.3
 
-    no_ia:
+    no_ia:  # no IA
         pipeline:
             - del fast_pt IA add_intrinsic
         values:
             - del intrinsic_alignment_parameters
     
-    nla_ia:
+    nla_ia:  # NLA model for IA
         params:
             - IA.ia_model = nla
         values:
@@ -44,13 +44,19 @@ components:
             - intrinsic_alignment_parameters.alpha2 = 0.0
             - intrinsic_alignment_parameters.bias_ta = 0.0
 
-    ia_gaussian_priors:
+    ia_gaussian_priors:  # apply Gaussian (instead of uniform) priors on IA params
         priors:
             - intrinsic_alignment_parameters.a1 = gaussian 0.0 3.0
             - intrinsic_alignment_parameters.a2 = gaussian 0.0 3.0
             - intrinsic_alignment_parameters.alpha1 = gaussian 0.0 3.0
             - intrinsic_alignment_parameters.alpha2 = gaussian 0.0 3.0
 
+    mean_zero_shear_corr:  # set the mean of the shear calibration priors to zero
+        priors:
+            - shear_calibration_parameters.m1 = gaussian 0.0 0.0091
+            - shear_calibration_parameters.m2 = gaussian 0.0 0.0078
+            - shear_calibration_parameters.m3 = gaussian 0.0 0.0076
+            - shear_calibration_parameters.m4 = gaussian 0.0 0.0076
 
     # fiducial DES shear scale cuts for 2pt_like
     scale_cuts_shear_2pt:
