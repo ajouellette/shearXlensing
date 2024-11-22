@@ -3,7 +3,14 @@ data/
 __pycache__/
 .ipynb_checkpoints/
 
+logs/
 *.out
 *.err
 
 workspaces/
+graphs/
+
+output*
+plots*
+
+sims/
