@@ -4,6 +4,7 @@ import numpy as np
 from scipy import interpolate
 import fitsio
 import pyccl as ccl
+import nx2pt
 
 
 def get_cosmo(params):
@@ -69,13 +70,32 @@ tracer_types = {
 }
 
 
-class CCLTheory:
-
-    halomodel_defaults = {
+class CCLHaloModel:
+    defaults = {
             "mdef": ccl.halos.MassDef200c,
             "hmf": ccl.halos.MassFuncBocquet16,
             "hbias": ccl.halos.HaloBiasTinker10,
+            "conc": ccl.halos.ConcentrationDuffy08,
         }
+
+    lk_arr = np.linspace(-3, 2, 20)
+    a_arr = np.logspace(-3, 0, 20)
+
+    suppress_1h = lambda a: 0.1
+    smooth_transition = lambda a: 0.7
+
+    def __init__(self, cosmo, mdef=None, hmf=None, hbias=None, conc=None):
+        self.mdef = self.defaults["mdef"] if mdef is None else mdef
+        slef.hmf = (self.defaults["hmf"] if hmf is None else hmf)(mass_def=mdef)
+        self.hbias = (self.defaults["hbias"] if hbias is None else hbias)(mass_def=mdef)
+        self.conc = (self.defaults["conc"] if conc is None else conc)(mass_def=mdef)
+
+        self.hmc = ccl.halos.HMCalculator(mass_function=self.hmf, halo_bias=self.hbias, mass_def=self.mdef)
+        self.nfw = ccl.halos.HaloProfileNFW(mass_def=self.mdef, concentration=self.conc)
+        self.pMM = ccl.halos.Profile2pt()
+
+
+class CCLTheory:
 
     def __init__(self, config):
         self.config = config
@@ -90,9 +110,9 @@ class CCLTheory:
             self.ia_z = None
 
         if "halomodel" in config.keys():
-            mdef = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
-            hmf = config["halomodel"].get("", halomodel_defaults["mdef"])
-            hbias = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
+            self.mdef = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
+            self.hmf = config["halomodel"].get("", halomodel_defaults["mdef"])
+            self.hbias = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
 
         self.tracers = config["tracers"]
         for trn, tracer in self.tracers.items():
@@ -101,24 +121,27 @@ class CCLTheory:
             ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
             tracer["ccl_tracer"] = ccl_tracer
             
-    def get_cl(self, tracer1, tracer2, ell, use_hm=False):
+    def get_cl(self, tracer1, tracer2, ell, use_hm=False, bpws=None):
         tr1 = self.tracers[tracer1]["ccl_tracer"]
         tr2 = self.tracers[tracer2]["ccl_tracer"]
         m1 = self.tracers[tracer1]["args"].get("m_bias", 0)
         m2 = self.tracers[tracer2]["args"].get("m_bias", 0)
         cl = (1 + m1) * (1 + m2) * self.cosmo.angular_cl(tr1, tr2, ell)
+        if bpws is not None:
+            cl = nx2pt.bin_theory_cl(cl, bpws)
         return cl
 
-    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, ell):
+    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, ell, bpws=None):
         sigma_m1a = self.tracers[tracer1a]["args"].get("sigma_m", 0)
         sigma_m2a = self.tracers[tracer2a]["args"].get("sigma_m", 0)
         sigma_m1b = self.tracers[tracer1b]["args"].get("sigma_m", 0)
         sigma_m2b = self.tracers[tracer2b]["args"].get("sigma_m", 0)
 
-        prior_factor = sigma_m1a * sigma_m2a + sigma_m1b * sigma_m2b
+        prior_factor = sigma_m1a * sigma_m1b + sigma_m1a * sigma_m2b + \
+                       sigma_m2a * sigma_m1b + sigma_m2a * sigma_m2b
 
-        cl_a = self.get_cl(tracer1a, tracer2a, ell)
-        cl_b = self.get_cl(tracer1b, tracer2b, ell)
+        cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
+        cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws)
 
         cov = prior_factor * np.outer(cl_a, cl_b)
         return cov
