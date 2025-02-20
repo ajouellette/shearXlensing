@@ -1,0 +1,72 @@
+cosmo:
+    Omega_c: 0.25
+    Omega_b: 0.05
+    sigma8: 0.81
+    n_s: 0.96
+    h: 0.67
+    matter_power_spectrum: camb
+    extra_parameters:
+        camb:
+            halofit_versoion: mead2020
+
+ia:
+    kind: nla-z
+    params:
+        A: 0.4
+        eta: 0.7
+        z_piv: 0.62
+
+tracers:
+    ck_0:
+      type: CMBLensing
+      args:
+          z_source: 1089
+
+    wl_0:
+      type: WeakLensing
+      args:
+          dndz:
+              file: &fits_nz /u/aaronjo2/caps/shearXlensing/data/des_y3/datavectors/2pt_NG_final_2ptunblind_02_26_21_wnz_maglim_covupdate.fits
+              section: nz_source BIN1
+              delta_z: 0
+          m_bias: -0.0063
+          sigma_m: 0.0091
+
+    wl_1:
+      type: WeakLensing
+      args:
+          dndz:
+              file: *fits_nz
+              section: nz_source BIN2
+              delta_z: 0
+          m_bias: -0.0198
+          sigma_m: 0.0078
+
+    wl_2:
+      type: WeakLensing
+      args:
+          dndz:
+              file: *fits_nz
+              section: nz_source BIN3
+              delta_z: 0
+          m_bias: -0.0241
+          sigma_m: 0.0076
+
+    wl_3:
+      type: WeakLensing
+      args:
+          dndz:
+              file: *fits_nz
+              section: nz_source BIN4
+              delta_z: 0
+          m_bias: -0.0369
+          sigma_m: 0.0076
+
+
+cross_spectra:
+    list:
+        - [ck_0, wl_0]
+        - [ck_0, wl_1]
+        - [ck_0, wl_2]
+        - [ck_0, wl_3]
+    ell_max: 5000
