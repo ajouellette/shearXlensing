@@ -3,6 +3,20 @@
 runs: []
 
 components:
+    fisher:
+        params:
+            - sampler = fisher
+    
+    polychord_fast:
+        params:
+            - sampler = polychord
+
+    polychord_accurate:
+        params:
+            - sampler = polychord
+            - polychord.live_points = 15d
+            - polychord.tolerance = 0.05
+
     sample_s8:  # sample S8 instead of As variants
         values:
             - del cosmological_parameters.a_s
@@ -16,13 +30,26 @@ components:
 
     free_Alens:  # sample A_lens
         values:
-            - cosmological_parameters.alens = 0.0  1.0  10.0
+            - cosmological_parameters.a_lens = 0.0  1.0  4.0
 
     amod:
         pipeline:
             - after camb amod
         values:
             - amod_parameter.a_mod = 0.0  1.0  2.0
+
+    planck_TT_Alens:
+        pipeline:
+            - append planck_like_TT
+        values:
+            - cosmological_parameters.tau = 0.0  0.0544  1.0
+            - cosmological_parameters.a_lens = 0.0  1.0  4.0
+
+    planck_TTTEEE:
+        pipeline:
+            - append planck_like_full
+        values:
+            - cosmological_parameters.tau = 0.0  0.0544  1.0
 
     feedback:  # use HMCode with baryonic feedback, marginalizing over log T_agn
         params:
