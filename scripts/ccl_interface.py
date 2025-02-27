@@ -3,6 +3,7 @@ import yaml
 import numpy as np
 from scipy import interpolate
 import fitsio
+import healpy as hp
 import pyccl as ccl
 import nx2pt
 
@@ -61,7 +62,7 @@ def get_weak_lensing_tracer(cosmo, args, ia=None):
 
 
 def get_cmb_lensing_tracer(cosmo, args):
-    return cosmo.CMBLensingTracer(**args)
+    return cosmo.CMBLensingTracer(z_source=args["z_source"])
     
     
 tracer_types = {
@@ -79,20 +80,26 @@ class CCLHaloModel:
         }
 
     lk_arr = np.linspace(-3, 2, 20)
-    a_arr = np.logspace(-3, 0, 20)
+    a_arr = np.logspace(-2, 0, 20)
 
     suppress_1h = lambda a: 0.1
     smooth_transition = lambda a: 0.7
 
     def __init__(self, cosmo, mdef=None, hmf=None, hbias=None, conc=None):
+        self.cosmo = cosmo
         self.mdef = self.defaults["mdef"] if mdef is None else mdef
-        slef.hmf = (self.defaults["hmf"] if hmf is None else hmf)(mass_def=mdef)
-        self.hbias = (self.defaults["hbias"] if hbias is None else hbias)(mass_def=mdef)
-        self.conc = (self.defaults["conc"] if conc is None else conc)(mass_def=mdef)
+        self.hmf = (self.defaults["hmf"] if hmf is None else hmf)(mass_def=self.mdef)
+        self.hbias = (self.defaults["hbias"] if hbias is None else hbias)(mass_def=self.mdef)
+        self.conc = (self.defaults["conc"] if conc is None else conc)(mass_def=self.mdef)
 
         self.hmc = ccl.halos.HMCalculator(mass_function=self.hmf, halo_bias=self.hbias, mass_def=self.mdef)
         self.nfw = ccl.halos.HaloProfileNFW(mass_def=self.mdef, concentration=self.conc)
         self.pMM = ccl.halos.Profile2pt()
+
+        self.tk_1h = ccl.halos.pk_4pt.halomod_Tk3D_1h(self.cosmo, self.hmc, self.nfw,
+                                                      lk_arr=self.lk_arr, a_arr=self.a_arr)
+        self.tk_ssc = ccl.halos.pk_4pt.halomod_Tk3D_SSC(cosmo=self.cosmo, hmc=self.hmc, prof=self.nfw,
+                                                        lk_arr=self.lk_arr, a_arr=self.a_arr)
 
 
 class CCLTheory:
@@ -110,18 +117,28 @@ class CCLTheory:
             self.ia_z = None
 
         if "halomodel" in config.keys():
-            self.mdef = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
-            self.hmf = config["halomodel"].get("", halomodel_defaults["mdef"])
-            self.hbias = config["halomodel"].get("mdef", halomodel_defaults["mdef"])
+            mdef = config["halomodel"].get("mdef", None)
+            hmf = config["halomodel"].get("hmf", None)
+            hbias = config["halomodel"].get("hbias", None)
+        else:
+            mdef = hmf = hbias = None
+
+        self.hm = CCLHaloModel(self.cosmo, mdef, hmf, hbias)
 
         self.tracers = config["tracers"]
         for trn, tracer in self.tracers.items():
             if tracer["type"] not in tracer_types.keys():
                 raise ValueError(f"unknown tracer type for {trn}")
             ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
+            mask_file = tracer["args"].get("sky_mask", None)
+            if mask_file is not None:
+                tracer["sky_mask"] = hp.read_map(mask_file)
+                # normalize so that mask is between 0 and 1
+                #tracer["sky_mask"] /= np.max(tracer["sky_mask"])
             tracer["ccl_tracer"] = ccl_tracer
             
     def get_cl(self, tracer1, tracer2, ell, use_hm=False, bpws=None):
+        """Compute the cross-spectrum between tracer1 and tracer2."""
         tr1 = self.tracers[tracer1]["ccl_tracer"]
         tr2 = self.tracers[tracer2]["ccl_tracer"]
         m1 = self.tracers[tracer1]["args"].get("m_bias", 0)
@@ -131,7 +148,8 @@ class CCLTheory:
             cl = nx2pt.bin_theory_cl(cl, bpws)
         return cl
 
-    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, ell, bpws=None):
+    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None):
+        """Compute the extra covariance term due to analytically marginalizing over multiplicative bias."""
         sigma_m1a = self.tracers[tracer1a]["args"].get("sigma_m", 0)
         sigma_m2a = self.tracers[tracer2a]["args"].get("sigma_m", 0)
         sigma_m1b = self.tracers[tracer1b]["args"].get("sigma_m", 0)
@@ -140,8 +158,12 @@ class CCLTheory:
         prior_factor = sigma_m1a * sigma_m1b + sigma_m1a * sigma_m2b + \
                        sigma_m2a * sigma_m1b + sigma_m2a * sigma_m2b
 
+        if bpws_b is None: bpws_b = bpws
+        ell = np.arange(max(bpws.shape[1], bpws_b.shape[1]))
+
+
         cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
-        cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws)
+        cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws_b)
 
         cov = prior_factor * np.outer(cl_a, cl_b)
         return cov
