@@ -1,4 +1,5 @@
 import os
+from os import path
 import sys
 import joblib
 
@@ -15,8 +16,8 @@ def main():
 
 
     # save catalogs at {data_dir}/../calibrated_catalogs
-    save_dir = '/'.join(index_file.split('/')[:-2]) + "/calibrated_catalogs"
-    print("saving catalogs to:", save_dir, '\n')
+    save_dir = path.join(path.dirname(index_file), '..', "calibrated_catalogs")
+    print("Will save calibrated catalogs to:", save_dir, '\n')
     os.makedirs(save_dir, exist_ok=True)
 
     for zbin in [1, 2, 3, 4, None]:
@@ -30,8 +31,13 @@ def main():
         print(len(cat.data), "galaxies")
         print("total multiplicative bias:", cat.R)
 
-        print("writing catalog...")
-        joblib.dump(cat, f"{save_dir}/DESY3_shearcat_zbin{zbin}.pkl")
+        if zbin is not None:
+            save_file = path.join(save_dir, f"DESY3_shearcat_zbin{zbin-1}.fits")
+        else:
+            save_file = path.join(save_dir, f"DESY3_shearcat_combined.fits")
+        print("writing catalog to", save_file)
+        # save catalog as astropy table in FITS format
+        cat.data.write(save_file, overwrite=True)
 
         if zbin is not None:
             print()
