@@ -5,11 +5,11 @@ channels:
 dependencies:
   - healpy
   - matplotlib
-  - namaster
   - numpy
   - pyccl
+  - namaster
   - python
-  - scipy==1.13.1
+  - scipy
   - ipykernel
   - h5py
   - fitsio
@@ -19,3 +19,6 @@ dependencies:
   - emcee
   - cosmosis
   - cosmosis-build-standard-library
+  - getdist
+  - astropy
+  - pyyaml
