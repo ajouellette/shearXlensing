@@ -2,6 +2,7 @@ import argparse
 
 import numpy as np
 import sacc
+import yaml
 
 import nx2pt
 import ccl_interface
@@ -34,19 +35,19 @@ def marginalize_m(s, theory):
     for tracers1 in s.get_tracer_combinations():
         for dtype1 in s.get_data_types(tracers1):
             # skip all B-modes
-            if 'b' in dtype:
+            if 'b' in dtype1:
                 continue
             inds1 = s.indices(tracers=tracers1, data_type=dtype1)
             for tracers2 in s.get_tracer_combinations():
-                for dtype2 s.get_data_types(tracers2):
+                for dtype2 in s.get_data_types(tracers2):
                     if 'b' in dtype2:
                         continue
-                    inds2 = s.indices(tracers=tracers2. data_type=dtype2)
+                    inds2 = s.indices(tracers=tracers2, data_type=dtype2)
                     # get bandpower windows
                     bpws = s.get_bandpower_windows(inds1).weight.T
                     bpws_b = s.get_bandpower_windows(inds2).weight.T
                     # compute block
-                    block = theory.get_cov_marge_m(*tracers1, *tracers2,
+                    block = theory.get_cov_marg_m(*tracers1, *tracers2,
                                                    bpws=bpws, bpws_b=bpws_b)
                     cov[np.ix_(inds1, inds2)] = block
     return cov
