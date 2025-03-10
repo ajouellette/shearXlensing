@@ -1,4 +1,5 @@
 import argparse
+import datetime
 
 import numpy as np
 import sacc
@@ -6,6 +7,21 @@ import yaml
 
 import nx2pt
 import ccl_interface
+
+
+def new_sacc_with_tracers(s):
+    """Create an "empty copy" of s."""
+    s_new = sacc.Sacc()
+    # copy metadata, but update creation date
+    for key in s.metadata.keys():
+        if key in ["creation", "created", "creation_date", "creation_time"]:
+            s_new.metadata[key] = datetime.date.today().isoformat()
+        else:
+            s_new.metadata[key] = s.metadata[key]
+    # copy over tracer objects
+    for tracer in s.tracers.values():
+        s_new.add_tracer_object(tracer)
+    return s_new
 
 
 def add_cov_from_sacc(s, s_other):
@@ -24,12 +40,8 @@ def add_cov_from_sacc(s, s_other):
     s.add_covariance(s_other.covariance.covmat)
 
 
-def marginalize_m(s, theory):
+def calc_cov_margem(s, theory):
     """Compute covariance term due to marginalizing over shear m bias."""
-    # sanity checks
-    if s.tracers.keys() != theory.tracers.keys():
-        raise ValueError("Theory object does not have the same tracers as the sacc file.")
-
     cov = np.zeros((len(s.mean), len(s.mean)))
     # loop over all power spectra in the sacc file
     for tracers1 in s.get_tracer_combinations():
@@ -51,6 +63,35 @@ def marginalize_m(s, theory):
                                                    bpws=bpws, bpws_b=bpws_b)
                     cov[np.ix_(inds1, inds2)] = block
     return cov
+
+
+def marginalize_m(s, theory):
+    """Correct for any multiplicative biases and marginalize over their uncertainty."""
+    # sanity checks
+    for tracer in s.tracers.keys():
+        if tracer not in theory.tracers.keys():
+            raise ValueError("Theory object does not have the same tracers as the sacc file.")
+    s_new = new_sacc_with_tracers(s)
+    # copy over Cls, correcting for multiplicative biases
+    # any Cl involving B-modes is copied over unchanged
+    for comb in s.get_tracer_combinations():
+        for dtype in s.get_data_types(comb):
+            ell, cl, inds = s.get_ell_cl(dtype, *comb, return_ind=True)
+            bpw = s.get_bandpower_windows(inds)
+            if 'b' in dtype:
+                s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
+            else:
+                tr1, tr2 = comb
+                m1 = theory.tracers[tr1]["args"].get("m_bias", 0)
+                m2 = theory.tracers[tr2]["args"].get("m_bias", 0)
+                cl /= (1 + m1) * (1 + m2)
+                s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
+    # calculate new covariance
+    cov = s.covariance.covmat + calc_cov_margem(s, theory)
+    s_new.add_covariance(cov)
+    # add a metadata flag
+    s_new.metadata["marginalized_over_m_bias"] = True
+    return s_new
 
 
 def marginalize_dz(s):
@@ -97,10 +138,7 @@ def main():
     if args.marg_shear_bias:
         if theory is None:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
-        cov_m = marginalize_m(s, theory)
-        full_cov = s.covariance.covmat + cov_m
-        s.add_covariance(full_cov, overwrite=True)
-
+        s = marginalize_m(s, theory)
 
     # save sacc file
     if args.output is not None:
