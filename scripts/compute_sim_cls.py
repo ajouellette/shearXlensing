@@ -51,7 +51,7 @@ def get_g_mock_map(sim_dir, nside, rot):
     return tracers
 
 
-def get_g_true_map(sim_dir, nside, rot, zbin):
+def get_g_true_map(sim_dir, nside, rot):
     pattern = "shear/mock_cats/desy3_mockcat_zbin{zbin}_rot{rot:02}.fits"
     tracers = []
     return tracers
@@ -160,6 +160,7 @@ if __name__ == "__main__":
     rotations = list(range(1, 11))
     cls_all = []
     bpws_all = []
+    covs_all = []
     for rot_i, rot in enumerate(rotations):
         print(f"---\nRotation {rot}\n---")
 
@@ -175,7 +176,6 @@ if __name__ == "__main__":
         # calculate all cross-spectra
         cls_rot = []
         bpws_rot = []
-        covs_rot = []
         for i, field1 in enumerate(fields1):
             cls = []
             bpws = []
@@ -185,18 +185,18 @@ if __name__ == "__main__":
                     wksp = nx2pt.get_workspace(field1.field, field2.field, bins, wksp_cache=wksp_cache)
                     cl = nmt.compute_coupled_cell(field1.field, field2.field)
 
-                    #if rot_i == 0:
-                    #    with Timer("computing cov..."):
-                    #        # compute covariance for single realization (spin-0 approx)
-                    #        cov_wksp = nx2pt.get_cov_workspace(field1.field, field2.field, wksp_cache=wksp_cache)
-                    #        pcl1 = nmt.compute_coupled_cell(field1.field, field1.field)
-                    #        fsky1 = np.mean(field1.mask**2)
-                    #        pcl2 = nmt.compute_coupled_cell(field2.field, field2.field)
-                    #        fsk2 = np.mean(field2.mask**2)
-                    #        fsky_cross = np.mean(field1.mask * field2.mask)
+                    if rot_i == 0:
+                        with Timer("computing cov..."):
+                            # compute covariance for single realization (spin-0 approx)
+                            cov_wksp = nx2pt.get_cov_workspace(field1.field, field2.field, wksp_cache=wksp_cache)
+                            pcl1 = nmt.compute_coupled_cell(field1.field, field1.field)
+                            fsky1 = np.mean(field1.mask**2)
+                            pcl2 = nmt.compute_coupled_cell(field2.field, field2.field)
+                            fsky2 = np.mean(field2.mask**2)
+                            fsky_cross = np.mean(field1.mask * field2.mask)
 
-                    #        cov = nmt.gaussian_covariance(cov_wksp, *[0,]*4, pcl1[:1] / fsky1, *[cl[:1] / fsky_cross,]*2, pcl2[:1] / fsky2, wksp)
-                    #        covs.append(cov)
+                            cov = nmt.gaussian_covariance(cov_wksp, *[0,]*4, pcl1[:1] / fsky1, *[cl[:1] / fsky_cross,]*2, pcl2[:1] / fsky2, wksp)
+                            covs.append(cov)
 
                     if field1 is field2 and hasattr(field1, "shot_noise"):
                         print("subtracting shot noise...")
@@ -212,13 +212,14 @@ if __name__ == "__main__":
                 bpws.append(wksp.get_bandpower_windows())
             cls_rot.append(cls)
             bpws_rot.append(bpws)
-            covs_rot.append(covs)
+            if rot_i == 0:
+                covs_all.append(covs)
         cls_all.append(cls_rot)
         bpws_all.append(bpws_rot)
             
     # save cross-spectra and bandpowers
     cls_all = np.array(cls_all)
     bpws_all = np.array(bpws_all)
-    covs_all = np.array(covs_rot)
+    covs_all = np.array(covs_all)
     print("saving to", output_file)
-    np.savez(output_file, cls=cls_all, ell_eff=ell_eff, bpws=bpws_all)
+    np.savez(output_file, cls=cls_all, ell_eff=ell_eff, bpws=bpws_all, covs=covs_all)
