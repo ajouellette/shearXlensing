@@ -1,0 +1,79 @@
+nside: 2048
+# specify binning scheme
+binning:
+    kind: linear
+    ell_min: 30
+    ell_max: 3500
+    nbpws: 24
+# place to save namaster workspaces
+workspace_dir: "/scratch/aaronjo2/nmt_workspaces"
+
+# use simulated maps
+tracers:
+    wl:
+      name: "simulated DES-Y3 shear maps"
+      bins: 4
+      bins_one_indexed: True  # simulations are labeled zbin1 - zbin4
+      data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps"
+      beam: pixwin
+      healpix:
+          map: "desy3_zbin{bin}_rot01_nside{nside}_shearmaps.fits"
+          mask: "desy3_zbin{bin}_rot01_nside{nside}_mask.fits"
+
+    ck:
+      name: "simulated (true) CMB convergence"
+      data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/cmbkappa/mockobs/"
+      healpix:
+          map: "../agora_cmbkappa_nside{nside}.fits"
+          mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+      use_mask_squared: True
+
+    ck_mv:
+      name: "simulated SPT-3G MV CMB convergence"
+      data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/cmbkappa/mockobs/"
+      healpix:
+          map: "kmapxx_kGMV_5001_1.fits"
+          mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+          is_masked: True
+      use_mask_squared: True
+
+    ck_pol:
+      name: "SPT-3G pol-only CMB convergence"
+      data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/cmbkappa/mockobs"
+      healpix:
+          map: "kmapxx_kPP_5001_1.fits"
+          mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+          is_masked: True
+      use_mask_squared: True
+
+cross_spectra:
+    list:
+        - tracers: [wl, ck]
+    # calculate covariance
+    covariance: True
+    interbin_cov: True
+    save_sacc:
+        metadata:
+            description: "Agora (true) CMB lensing X DES-Y3 shear"
+        file: "data/cross_cls/simulated_desy3_true_cmbkappa_nside{nside}_lmax3500.fits"
+
+cross_spectra_mv:
+    list:
+        - tracers: [wl, ck_mv]
+    # calculate covariance
+    covariance: True
+    interbin_cov: True
+    save_sacc:
+        metadata:
+            description: "SPT-3G MV CMB lensing X DES-Y3 shear"
+        file: "data/cross_cls/simulated_desy3_spt3g_mv_nside{nside}_lmax3500.fits"
+
+cross_spectra_pol:
+    list:
+        - tracers: [wl, ck_pol]
+    covariance: True
+    interbin_cov: True
+    save_sacc:
+        metadata:
+            description: "SPT-3G pol-only CMB lensing x DES-Y3 shear"
+        file: "data/cross_cls/simulated_desy3_spt3g_pol_nside{nside}_lmax3500.fits"
