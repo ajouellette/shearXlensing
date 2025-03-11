@@ -1,9 +1,11 @@
-output_dir: /projects/caps/aaronjo2/shearXlensing/campaigns/planck
-include: /projects/caps/aaronjo2/shearXlensing/campaigns/components.yml
+output_dir: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/planck
+include: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/components.yml
+output_name: chain_{name}
 
 components:
     # modify sampler for all runs below
-    sampler: {params: [sampler = maxlike fisher]}
+    #sampler: {params: [sampler = maxlike fisher]}
+    sampler: {params: [sampler = polychord]}
 
     des_prior:
         params:
@@ -36,3 +38,30 @@ runs:
       components:
           - sampler
           - sample_s8
+
+    - name: planck_TT_Alens_des_prior
+      parent: planck_TT_des_prior
+      components:
+          - free_Alens
+      submission:
+          template: &template /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
+          time: 1-12:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: planck_TT_Alens_des_prior_fisher
+      parent: planck_TT_Alens_des_prior
+      components:
+          - sample_s8
+      params:
+          - sampler = maxlike fisher
+
+    - name: planck_TTTEEE_des_prior
+      parent: planck_TT_des_prior
+      pipeline:
+          - replace planck_TT planck_TTTEEE
+      submission:
+          template: *template
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
