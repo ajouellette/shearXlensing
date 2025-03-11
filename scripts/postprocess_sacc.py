@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import re
 
 import numpy as np
 import sacc
@@ -7,6 +8,53 @@ import yaml
 
 import nx2pt
 import ccl_interface
+
+
+wl_keys = ["wl", "tracer_wl", "gs"]  # prefixes that indicate a galaxy shear tracer
+ck_keys = ["ck", "tracer_ck"]  # prefixes that indicate a CMB lensing tracer
+
+
+def get_trailing_int(s):
+    """
+    Extract a trailing integer from the given string.
+
+    taken from https://stackoverflow.com/questions/7085512/check-what-number-a-string-ends-with-in-python
+    """
+    m = re.search(r"\d+$", s)
+    return int(m.group()) if m is not None else None
+
+
+def standardize_sacc(s, fix_bin_numbers=False):
+    """Standardize a sacc file to work with cosmosis analysis pipelines."""
+    # Rename tracers to standard names
+    tracer_names = list(s.tracers.keys())
+    for tracer in tracer_names:
+        bin_number = get_trailing_int(tracer)
+        if bin_number is None:
+            bin_number = 0
+        else:
+            if fix_bin_numbers:
+                bin_number -= 1
+        new_name = tracer
+        for key in wl_keys:
+            if tracer.startswith(key):
+                new_name = f"wl_{bin_number}"
+                break
+        for key in ck_keys:
+            if tracer.startswith(key):
+                new_name = f"ck_{bin_number}"
+                break
+        if tracer != new_name:
+            print(f"Renaming '{tracer}' to '{new_name}'")
+            s.rename_tracer(tracer, new_name)
+    # re-order (ck, wl) to (wl, ck)
+    for data_point in s.data:
+        tracers = data_point.tracers
+        if len(tracers) == 2:
+            if tracers[0].startswith("ck") and tracers[1].startswith("wl"):
+                new_tracers = (tracers[1], tracers[0])
+                print(f"Switching '{tracers}' to '{new_tracers}'")
+                data_point.tracers = new_tracers
 
 
 def new_sacc_with_tracers(s):
@@ -37,7 +85,44 @@ def add_cov_from_sacc(s, s_other):
         raise ValueError("two sacc files do not have equal data vector lengths")
 
     # copy over covariance
-    s.add_covariance(s_other.covariance.covmat)
+    s.add_covariance(s_other.covariance.covmat, overwrite=True)
+
+
+def correct_cmbk_tf(s, tf):
+    """Correct cross-spectra for a CMB lensing transfer function."""
+    if "ck_0" not in s.tracers.keys():
+        return s
+    s_new = new_sacc_with_tracers(s)
+    # keep track of standard deviations in order to rescale covariance matrix
+    stds_old = np.sqrt(np.diag(s.covariance.covmat))
+    stds_new = []
+    for comb in s.get_tracer_combinations():
+        for dtype in s.get_data_types(comb):
+            ell, cl, inds = s.get_ell_cl(dtype, *comb, return_ind=True)
+            bpw = s.get_bandpower_windows(inds)
+            # spectra that do not involve CMB lensing or involve B-modes do not get modified
+            if 'b' in dtype or "ck_0" not in comb:
+                s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
+                stds_new.append(stds_old[inds])
+            else:
+                # can't do a CMB lensing auto
+                if comb[0] == comb[1]:
+                    raise NotImplementedError("Cannot correct a CMB lensing auto-spectrum")
+                # check that banpowers are correct
+                if not (ell == tf["ell"]).all():
+                    raise ValueError(f"bandpowers of cross-spectrum {comb} and transfer function do not match")
+                # do correction
+                cl_corr = cl / tf["tf"]
+                s_new.add_ell_cl(dtype, *comb, ell, cl_corr, window=bpw)
+                std_corr = np.abs(cl_corr) * np.sqrt((stds_old[inds] / cl)**2 + (tf["tf_err"] / tf["tf"])**2)
+                stds_new.append(std_corr)
+    # rescale covariance
+    stds_new = np.hstack(stds_new)
+    cov_new = s.covariance.covmat * np.outer(stds_new, stds_new) / np.outer(stds_old, stds_old)
+    s_new.add_covariance(cov_new)
+    # add a metadata flag
+    s_new.metadata["cmbk_tf_corrected"] = True
+    return s_new
 
 
 def calc_cov_margem(s, theory):
@@ -100,49 +185,69 @@ def marginalize_dz(s):
 
 def main():
     description = """
-    Add a covariance to a sacc file that contains the cross-spectra of a set of tracers.
+    Post-process a sacc file that contains the cross-spectra of a set of tracers.
 
     Can do one or more of the following:
     - take the covariance from another sacc file (must have the exact same tracers and cross-spectra)
+    - correct cross-spectra for a CMB lensing transfer function
     - marginalize over shear multiplicative bias
     - calculate non-Gaussian covariance terms (SSC + connected trispectrum)
+
+    Also does some tracer standardization before writing the output sacc file.
 
     If marginalizing over shear bias and/or computing non-Gaussian terms, then a theory.yaml file is needed.
     """
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("sacc_file")
     parser.add_argument("-o", "--output", help="where to write new sacc file")
+    parser.add_argument("-p", "--inplace", action="store_true", help="modify sacc file in-place")
     parser.add_argument("--from-sacc", help="use covariance from another sacc file")
+    parser.add_argument("--cmbk-tf", help="correct for a CMB lensing transfer function")
     parser.add_argument("-m", "--marg-shear-bias", action="store_true", help="marginalize over shear multiplicative bias")
     parser.add_argument("-t", "--theory", help="file describing tracers and how to calculate theory spectra")
     parser.add_argument("--non-gaussian", action="store_true", help="compute non-Gaussian covariance terms")
-
+    
+    theory = None
     args = parser.parse_args()
-    print(args)
+    if args.output is None and not args.inplace:
+        raise ValueError("Must provide an output location")
 
     s = sacc.Sacc.load_fits(args.sacc_file)
+    # start with standardizing tracers
+    standardize_sacc(s)
 
     # load covariance from another file
     if args.from_sacc is not None:
+        print("Loading covariance from", args.from_sacc)
         s_other = sacc.Sacc.load_fits(args.from_sacc)
+        standardize_sacc(s_other)
         add_cov_from_sacc(s, s_other)
 
-    # load tracer info and compute theory quantities
-    if args.theory is not None:
-        with open(args.theory) as f:
-            config = yaml.safe_load(f)
-            theory = ccl_interface.CCLTheory(config)
-    else:
-        theory = None
+    # correct for a CMB lensing transfer function
+    if args.cmbk_tf is not None:
+        print("Correcting for CMB lensing transfer function...")
+        tf = dict()
+        with np.load(args.cmbk_tf) as f:
+            for key in f.keys():
+                tf[key] = f[key]
+        s = correct_cmbk_tf(s, tf)
 
+    # shear magnification bias marginalization
     if args.marg_shear_bias:
-        if theory is None:
+        print("Marginalizing over shear multiplicative bias...")
+        if theory is None and args.theory is not None:
+            print("Loading tracer info from", args.theory)
+            with open(args.theory) as f:
+                config = yaml.safe_load(f)
+                theory = ccl_interface.CCLTheory(config)
+        else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = marginalize_m(s, theory)
 
     # save sacc file
+    print("Writing sacc file...")
     if args.output is not None:
-        s.save_fits(args.output)
+        s.save_fits(args.output, overwrite=True)
     else:
         s.save_fits(args.sacc_file, overwrite=True)
 
