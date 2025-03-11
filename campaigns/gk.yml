@@ -1,9 +1,14 @@
-output_dir: /projects/caps/aaronjo2/shearXlensing/campaigns/gk
-include: /projects/caps/aaronjo2/shearXlensing/campaigns/components.yml
+output_dir: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/gk
+include: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/components.yml
 output_name: chain_{name}
 
 runs:
-    - name: gk_agora_des_priors_nla
+    ###############################
+    ## Runs using simulated data ##
+    ###############################
+    
+    # mock shear x true lensing
+    - name: gk_agora_true_des_priors_nla
       base: des-y3-spt-3g.ini
       components:
           - mean_zero_shear_corr
@@ -11,14 +16,213 @@ runs:
       pipeline:
           - del pk_to_cl_shear
       params:
-          - sampler = polychord
+          - sampler = nautilus
           - add_intrinsic.shear-shear = F
-          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_spt3g_nside2048_lmax3500.fits
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_true_cmbkappa_nside2048_lmax3500.fits
           - sacc_like.data_sets = cl_0e
           - del sacc_like.cl_ee_section
       submission:
-          template: &template /projects/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
+          template: &template /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    # mock shear x true lensing, marginalizing over m bias
+    - name: gk_agora_true_des_priors_nla_margem
+      parent: gk_agora_true_des_priors_nla
+      pipeline:
+          - del shear_m_bias
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_true_cmbkappa_nside2048_lmax3500_margem.fits
+      values:
+          - del shear_calibration_parameters
+      priors:
+          - del shear_calibration_parameters
+      submission:
+        template: *template
+        time: 1-00:00:00
+        nodes: 1
+        tasks_per_node: 40
+
+    # mock shear x true lensing (mv errors)
+    - name: gk_agora_true_mv_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_true_cmbkappa_nside2048_lmax3500_mv_err.fits
+      submission:
+        template: *template
+        time: 1-00:00:00
+        nodes: 1
+        tasks_per_node: 40
+
+    # mock shear x true lensing (pol errors)
+    - name: gk_agora_true_pol_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_true_cmbkappa_nside2048_lmax3500_pol_err.fits
+      submission:
+        template: *template
+        time: 1-00:00:00
+        nodes: 1
+        tasks_per_node: 40
+
+    # un-corrected mock shear x mock MV lensing
+    - name: gk_agora_mv_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_spt3g_mv_nside2048_lmax3500.fits
+      submission:
+          template: *template
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    # mock shear x mock MV lensig corrected for lensing TF
+    - name: gk_agora_mv_des_priors_nla_corrected
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_spt3g_mv_nside2048_lmax3500_corrected.fits
+      submission:
+        template: *template
+        time: 1-00:00:00
+        nodes: 1
+        tasks_per_node: 40
+
+    # un-corrected mock shear x mock Pol lensing
+    - name: gk_agora_pol_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_spt3g_pol_nside2048_lmax3500.fits
+      submission:
+          template: *template
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    # mock shear x mock Pol lensing corrected for lensing TF
+    - name: gk_agora_pol_des_priors_nla_corrected
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/simulated_desy3_spt3g_pol_nside2048_lmax3500_corrected.fits
+      submission:
+          template: *template
+          time: 1-00:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+
+    ##############################################################
+    ## Forecasts using simulated data vectors computed with CCL ##
+    ##############################################################
+
+    - name: gk_ccl_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_mv_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
           time: 0-16:00:00
           nodes: 1
           tasks_per_node: 40
+
+    - name: gk_ccl_pol_des_priors_nla
+      parent: gk_agora_true_des_priors_nla
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_pol_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
+          time: 0-16:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: gk_ccl_planckTT_nla
+      parent: gk_ccl_des_priors_nla
+      components:
+          - planck_TT_Alens
+      submission:
+          template: *template
+          time: 2-12:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: gk_ccl_pol_planckTT_nla
+      parent: gk_ccl_planckTT_nla
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_pol_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
+          time: 2-12:00:00
+          nodes: 1
+          tasks_per_node: 40
+
+    - name: gk_ccl_planckTTTEEE_nla_Amod
+      parent: gk_ccl_des_priors_nla
+      components:
+          - planck_TTTEEE
+          - amod
+      submission:
+          template: *template
+          time: 1-12:00:00
+          nodes: 1
+          tasks_per_node: 64
+
+    - name: gk_ccl_pol_planckTTTEEE_nla_Amod
+      parent: gk_ccl_planckTTTEEE_nla_Amod
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_pol_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
+          time: 1-12:00:00
+          nodes: 1
+          tasks_per_node: 64
+
+    - name: gk_ccl_planckTTTEEE_nla_logTagn
+      parent: gk_ccl_des_priors_nla
+      components:
+          - planck_TTTEEE
+          - feedback
+      submission:
+          template: *template
+          time: 1-12:00:00
+          nodes: 1
+          tasks_per_node: 64
+
+    - name: gk_ccl_pol_planckTTTEEE_nla_logTagn
+      parent: gk_ccl_planckTTTEEE_nla_logTagn
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_pol_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
+          time: 1-12:00:00
+          nodes: 1
+          tasks_per_node: 64
+
+    - name: gk_ccl_planckTT_nla_slow
+      parent: gk_ccl_planckTT_nla
+      components:
+          - polychord_accurate
+      submission:
+          template: *template
+          time: 2-12:00:00
+          nodes: 2
+          tasks_per_node: 64
+
+    - name: gk_ccl_pol_planckTT_nla_slow
+      parent: gk_ccl_planckTT_nla_slow
+      params:
+          - sacc_like.data_file = /projects/caps/aaronjo2/shearXlensing/data/cross_cls/mock_sptkappa_pol_2048_x_desy3shear_bins.fits
+      submission:
+          template: *template
+          time: 2-12:00:00
+          nodes: 2
+          tasks_per_node: 64
+
+    - name: gk_ccl_planckTT_nla_gaussian_fisher
+      parent: gk_ccl_planckTT_nla
+      components:
+          - sample_s8
+          - ia_gaussian_priors
+      params:
+          - sampler = fisher
+
 
