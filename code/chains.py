@@ -22,25 +22,32 @@ def get_latex_labels(param_names):
 
 def load_cosmosis_chain(fname, label=None):
     """Load a cosmosis chain from a file."""
+    # read the header
+    header = []
     with open(fname) as f:
-        params = f.readline().lstrip("#").lower().split()  # cosmosis parameter names are case-insensitive
-        # assumes that all parameter names are unique
-        params = [p if '--' not in p else p.split('--')[1] for p in params]
-        sampler = f.readline().split('=')[1].strip()
+        while True:
+            line = f.readline()
+            if not line or not line.startswith('#'):
+                break
+            else:
+                header.append(line.strip())
+    # cosmosis parameter names are case-insensitive
+    params = header.pop(0).lstrip("#").lower().split()  
+    # for simplicity, get rid of section names
+    # assumes that all parameter names are unique
+    params = [p if '--' not in p else p.split('--')[1] for p in params]
+
+    sampler = header.pop(1).split('=')[1].strip()
+    if sampler not in samplers.keys():
+        raise NotImplementedError(f"unknown sampler {sampler}")
     print("sampler:", sampler)
+
     data = np.loadtxt(fname, comments='#')
 
-    if sampler == "polychord":
-        return load_cosmosis_polychord(params, data, label=label)
-    elif sampler == "nautilus":
-        return load_cosmosis_nautilus(params, data, label=label)
-    elif sampler == "fisher":
-        return load_cosmosis_fisher(params, data, label=label)
-    else:
-        raise NotImplementedError
+    return samplers[sampler](header, params, data, label=label)
 
 
-def load_cosmosis_polychord(params, data, label=None):
+def load_cosmosis_polychord(header, params, data, label=None):
     print(len(data), "samples")
     samples = getdist.MCSamples(samples=data[:,:-4], weights=data[:,-1],
                                 names=params[:-4], labels=get_latex_labels(params[:-4]),
@@ -48,7 +55,7 @@ def load_cosmosis_polychord(params, data, label=None):
     return samples
 
 
-def load_cosmosis_nautilus(params, data, label=None):
+def load_cosmosis_nautilus(header, params, data, label=None):
     print(len(data), "samples")
     samples = getdist.MCSamples(samples=data[:,:-3], weights=np.exp(data[:,-3]),
                                 names=params[:-3], labels=get_latex_labels(params[:-3]),
@@ -56,5 +63,12 @@ def load_cosmosis_nautilus(params, data, label=None):
     return samples
 
 
-def load_cosmosis_fisher(params, data, label=None):
+def load_cosmosis_fisher(header, params, data, label=None):
     pass
+
+
+samplers = {
+        "nautilus": load_cosmosis_nautilus,
+        "polychord": load_cosmosis_polychord,
+        "fisher": load_cosmosis_fisher
+    }
