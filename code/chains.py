@@ -1,5 +1,6 @@
 import numpy as np
 import getdist
+from getdist.gaussian_mixtures import GaussianND
 
 
 def get_latex_labels(param_names):
@@ -37,7 +38,7 @@ def load_cosmosis_chain(fname, label=None):
     # assumes that all parameter names are unique
     params = [p if '--' not in p else p.split('--')[1] for p in params]
 
-    sampler = header.pop(1).split('=')[1].strip()
+    sampler = header.pop(0).split('=')[1].strip()
     if sampler not in samplers.keys():
         raise NotImplementedError(f"unknown sampler {sampler}")
     print("sampler:", sampler)
@@ -64,7 +65,15 @@ def load_cosmosis_nautilus(header, params, data, label=None):
 
 
 def load_cosmosis_fisher(header, params, data, label=None):
-    pass
+    # get mean vector from header
+    mean = np.zeros(len(params))
+    for i, line in enumerate(header[-len(params):]):
+        mean[i] = float(line.split('=')[1])
+    # parameter covariance
+    pcov = np.linalg.inv(data)
+    gaussian = GaussianND(mean, pcov, names=params, labels=get_latex_labels(params),
+                          label=label)
+    return gaussian
 
 
 samplers = {
