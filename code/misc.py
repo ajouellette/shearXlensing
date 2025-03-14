@@ -17,3 +17,22 @@ def make_healpix_map(nside, ra=None, dec=None, ipix=None, vals=None):
         ipix = hp.ang2pix(nside, ra, dec, lonlat=True)
 
     return np.bincount(ipix, weights=vals, minlength=npix)
+
+
+def numdiff(func, params, h=1e-4, **kwrds):
+    """
+    Calculate the numerical derivative of a function with signature func(params, **kwrds).
+
+    params: dictionary of parameters that differentiated wrt
+    kwrds: extra keyword arguments to the fuction
+    h: step size of numerical derivative
+
+    Returns dictionary of parameters and derivatives
+    """
+    deriv = {}
+    for p, val in params.items():
+        params_hi = params | {p: val+h}
+        params_lo = params | {p: val-h}
+        deriv[p] = (func(params_hi, **kwrds) - func(params_lo, **kwrds)) / (2*h)
+    return deriv
+
