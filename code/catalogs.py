@@ -14,19 +14,23 @@ class DESY3ShearCat:
     def load_from_pkl(cls, filename):
         return joblib.load(filename)
 
-    def __init__(self, index_file, zbin=None, group_name="catalog/metacal",
+    def __init__(self, index_file, zbin=None, sample="all", group_name="catalog/metacal",
                  load_cols=["coadd_object_id", "ra", "dec", "e_1", "e_2", "psf_e1", "psf_e2", "weight"],
                  dg=0.01):
         self.index_file = index_file
         self.data_dir = '/'.join(index_file.split('/')[:-1])
         self.dg = dg
         self.zbin = zbin
-        self.name = "DES Y3 source catalog" + ('' if zbin is None else f" (z-bin {zbin})")
+        self.sample = sample
+        if sample == "all":
+            self.name = "DES Y3 source catalog" + ('' if zbin is None else f" (z-bin {zbin})")
+        else:
+            self.name = "DES Y3 source catalog" + ('' if zbin is None else f" (z-bin {zbin}, {sample} sample)")
 
         self.table_name = f"{group_name}/unsheared"
         self.tables_sheared = {s: f"{group_name}/sheared_{s}" for s in self.cat_shears}
 
-        self.sel_inds = self.get_selection(zbin=zbin)
+        self.sel_inds = self.get_selection(zbin=zbin, sample=sample)
 
         # create data table
         with h5py.File(index_file) as index:
@@ -59,21 +63,36 @@ class DESY3ShearCat:
         return nmt.NmtFieldCatalog([self.data["ra"], self.data["dec"]], self.data["weight"],
                                    [-field[0], field[1]], lmax, lmax_mask=lmax_mask, spin=2, lonlat=True)
 
-    def get_selection(self, zbin=None, shear=None):
+    def get_selection(self, zbin=None, shear=None, sample="all"):
         """Return indicies of source galaxies within a given selection."""
+        samples = ["all", "blue", "red"]
+        if sample not in samples:
+            raise ValueError(f"sample must be one of {samples}")
+        if sample != "all" and zbin is None:
+            raise ValueError("color selection is only available for individal redshift bins")
         # look-up table for labelling of redshift bins
         zbins = {i: f"_bin{i}" for i in range(1, 5)} | {None: ''}
         if zbin not in zbins.keys():
             raise ValueError(f"zbin must be one of {zbins.keys()}")
         if shear is None:
-            shear = ''
+            select_name = f"index/select{zbins[zbin]}"
+            cat_name = "catalog/metacal/unsheared"
         else:
             if shear not in self.cat_shears:
                 raise ValueError(f"shear must be one of {self.cat_shears + [None]}")
-            shear = '_' + shear
-        select_name = f"index/select{shear}{zbins[zbin]}"
+            select_name = f"index/select_{shear}{zbins[zbin]}"
+            cat_name = f"catalog/metacal/sheared_{shear}"
         with h5py.File(self.index_file) as index:
             inds = index[select_name][:]
+            if sample != "all":
+                rz_color = -2.5 * np.log10(index[cat_name]["flux_r"][:][inds] /
+                                           index[cat_name]["flux_z"][:][inds])
+                rz_cuts = [0.5, 0.75, 0.95, 1.3]  # From Table 1 of McCullough et al 2024
+                blue_select = rz_color < rz_cuts[zbin-1]
+                if sample == "blue":
+                    inds = inds[blue_select]
+                else:
+                    inds = inds[~blue_select]
         return inds
 
     def get_col(self, col, shear=None):
@@ -85,8 +104,8 @@ class DESY3ShearCat:
         # more efficient to first calculate transpose of Rs
         for j in [1, 2]:
             Rs_j = []
-            selection_p = self.get_selection(zbin=self.zbin, shear=f"{j}p")
-            selection_m = self.get_selection(zbin=self.zbin, shear=f"{j}m")
+            selection_p = self.get_selection(zbin=self.zbin, sample=self.sample, shear=f"{j}p")
+            selection_m = self.get_selection(zbin=self.zbin, sample=self.sample, shear=f"{j}m")
             with h5py.File(self.index_file) as index:
                 weights_p = index[self.tables_sheared[f"{j}p"]]["weight"][:][selection_p]
                 weights_m = index[self.tables_sheared[f"{j}m"]]["weight"][:][selection_m]
