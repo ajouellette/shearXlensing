@@ -40,6 +40,8 @@ def load_cosmosis_chain(fname, label=None):
     # for simplicity, get rid of section names
     # assumes that all parameter names are unique
     params = [p if '--' not in p else p.split('--')[1] for p in params]
+    # get all occurances of each parameter to check for duplicates
+    p_inds = {param: [i for i, p in enumerate(params) if param == p] for param in set(params)}
 
     sampler = header.pop(0).split('=')[1].strip()
     if sampler not in samplers.keys():
@@ -47,6 +49,21 @@ def load_cosmosis_chain(fname, label=None):
     print("sampler:", sampler)
 
     data = np.loadtxt(fname, comments='#')
+    remove_inds = []
+    # remove duplicated parameters
+    for param, inds in p_inds.items():
+        if len(inds) > 1:
+            is_equal = np.all([np.isclose(data[:,inds[0]], data[:,i]).all() for i in inds[1:]])
+            if not is_equal:
+                raise RuntimeError(f"found different parameters with the same name: {param}")
+            remove_inds += inds[1:]
+    print(remove_inds)
+    mask = np.ones(len(params), dtype=bool)
+    mask[remove_inds] = False
+    data = data[:,mask]
+    params = [p for i, p in enumerate(params) if i not in remove_inds]
+
+    print(len(params), data.shape)
 
     chain = samplers[sampler](params, data, header=header, label=label)
     # try to add derived parameters
@@ -60,18 +77,6 @@ def load_cosmosis_chain(fname, label=None):
 
 
 def load_nested(params, data, header=None, label=None):
-    if header is not None:
-        n_varied = None
-        for line in header:
-            if "n_varied" in line:
-                n_varied = int(line.split('=')[1])
-                break
-        varied_params = params[:n_varied]
-        # mark derived params
-        derived_params = [p+'*' for p in params[n_varied:]]
-    else:
-        varied_params = params
-        derived_params = []
     # find weights column
     ind = -1
     for key in ["weight", "log_weight"]:
@@ -85,6 +90,19 @@ def load_nested(params, data, header=None, label=None):
     else:
         print("warning: did not find sample weights, using equal weights")
         weights = np.ones(len(data))
+
+    if header is not None:
+        n_varied = None
+        for line in header:
+            if "n_varied" in line:
+                n_varied = int(line.split('=')[1])
+                break
+        varied_params = params[:n_varied]
+        # mark derived params
+        derived_params = [p+'*' for p in params[n_varied:]]
+    else:
+        varied_params = params
+        derived_params = []
 
     samples = getdist.MCSamples(samples=data, weights=weights,
                                 names=varied_params + derived_params, labels=get_latex_labels(params),
