@@ -57,23 +57,26 @@ class DESY3ShearCat:
             raise ValueError(f"sample must be one of {samples}")
         if sample != "all" and zbin is None:
             raise ValueError("color selection is only available for individal redshift bins")
+
         # look-up table for labelling of redshift bins
         zbins = {i: f"_bin{i}" for i in range(1, 5)} | {None: ''}
         if zbin not in zbins.keys():
             raise ValueError(f"zbin must be one of {zbins.keys()}")
-        if shear is None:
-            select_name = f"index/select{zbins[zbin]}"
-            cat_name = "catalog/metacal/unsheared"
-        else:
-            if shear not in self.cat_shears:
-                raise ValueError(f"shear must be one of {self.cat_shears + [None]}")
-            select_name = f"index/select_{shear}{zbins[zbin]}"
-            cat_name = f"catalog/metacal/sheared_{shear}"
+
+        select_name = f"select_{shear}" if shear is not None else "select"
+        cat_name = f"sheared_{shear}" if shear is not None else "unsheared"
+
         with h5py.File(self.index_file) as index:
-            inds = index[select_name][:]
+            inds = index[f"index/{select_name}"][:]  # select all source galaxies
+            # tomographic bins
+            if zbin is not None:
+                # need to use sompz catalog in order to use updated binning
+                bin_mask = index[f"catalog/sompz/{cat_name}/bhat"][:][inds] == zbin - 1
+                inds = inds[bin_mask]
+            # color selections
             if sample != "all":
-                rz_color = -2.5 * np.log10(index[cat_name]["flux_r"][:][inds] /
-                                           index[cat_name]["flux_z"][:][inds])
+                rz_color = -2.5 * np.log10(index[f"catalog/metacal/{cat_name}"]["flux_r"][:][inds] /
+                                           index[f"catalog/metacal/{cat_name}"]["flux_z"][:][inds])
                 rz_cuts = [0.5, 0.75, 0.95, 1.3]  # From Table 1 of McCullough et al 2024
                 blue_select = rz_color < rz_cuts[zbin-1]
                 if sample == "blue":
