@@ -3,7 +3,6 @@ import h5py
 import fitsio
 from astropy import table
 import joblib
-import pymaster as nmt
 
 
 class DESY3ShearCat:
@@ -50,18 +49,6 @@ class DESY3ShearCat:
         s = np.sin(2*phi)
         return [c * self.data["g_1"] + s * self.data["g_2"],
                 -s * self.data["g_1"] + c * self.data["g_2"]]
-
-    def nmt_catalog(self, lmax, lmax_mask=None, rot=False, psf=False):
-        """Setup a NmtFieldCatalog object."""
-        if not psf:
-            if rot:
-                field = self.rotate_shear()
-            else:
-                field = [self.data["g_1"], self.data["g_2"]]
-        else:
-            field = [self.data["psf_e1"], self.data["psf_e2"]]
-        return nmt.NmtFieldCatalog([self.data["ra"], self.data["dec"]], self.data["weight"],
-                                   [-field[0], field[1]], lmax, lmax_mask=lmax_mask, spin=2, lonlat=True)
 
     def get_selection(self, zbin=None, shear=None, sample="all"):
         """Return indicies of source galaxies within a given selection."""
