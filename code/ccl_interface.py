@@ -71,6 +71,10 @@ tracer_types = {
 }
 
 
+def load_tracer():
+    pass
+
+
 class CCLHaloModel:
     defaults = {
             "mdef": ccl.halos.MassDef200c,
@@ -79,8 +83,9 @@ class CCLHaloModel:
             "conc": ccl.halos.ConcentrationDuffy08,
         }
 
-    lk_arr = np.linspace(-3, 2, 20)
-    a_arr = np.logspace(-2, 0, 20)
+    k_arr = np.logspace(-4, 2, 20)
+    lk_arr = np.log(k_arr)
+    a_arr = np.linspace(0.01, 1, 20)
 
     suppress_1h = lambda a: 0.1
     smooth_transition = lambda a: 0.7
@@ -93,6 +98,7 @@ class CCLHaloModel:
         self.conc = (self.defaults["conc"] if conc is None else conc)(mass_def=self.mdef)
 
         self.hmc = ccl.halos.HMCalculator(mass_function=self.hmf, halo_bias=self.hbias, mass_def=self.mdef)
+
         self.nfw = ccl.halos.HaloProfileNFW(mass_def=self.mdef, concentration=self.conc)
         self.pMM = ccl.halos.Profile2pt()
 
@@ -125,6 +131,7 @@ class CCLTheory:
 
         self.hm = CCLHaloModel(self.cosmo, mdef, hmf, hbias)
 
+        # load tracers
         self.tracers = config["tracers"]
         for trn, tracer in self.tracers.items():
             if tracer["type"] not in tracer_types.keys():
@@ -132,9 +139,7 @@ class CCLTheory:
             ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
             mask_file = tracer["args"].get("sky_mask", None)
             if mask_file is not None:
-                tracer["sky_mask"] = hp.read_map(mask_file)
-                # normalize so that mask is between 0 and 1
-                #tracer["sky_mask"] /= np.max(tracer["sky_mask"])
+                tracer["sky_mask"] = hp.read_map(mask_file).astype(bool)
             tracer["ccl_tracer"] = ccl_tracer
             
     def get_cl(self, tracer1, tracer2, ell, use_hm=False, bpws=None):
@@ -168,11 +173,30 @@ class CCLTheory:
         cov = prior_factor * np.outer(cl_a, cl_b)
         return cov
 
+    def get_fsky(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None):
+        if tracer2a is None:
+            tracer2a = tracer1a
+        if tracer1b is None:
+            tracer1b = tracer1a
+        if tracer2b is None:
+            tracer2b = tracer2a
+        masks = [self.tracers[tr]["sky_mask"]
+                 for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
+        return np.mean(masks[0] * masks[1] * masks[2] * masks[3])
 
-    def get_cov_ssc(self, tracer1a, tracer2a, tracer1b, tracer2b):
-        pass
+    def get_cov_ssc(self, tracer1a, tracer2a, tracer1b, tracer2b, ells_a, ells_b):
+        fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
+        print(fsky)
+        sigma2_B = self.cosmo.sigma2_B_disc(fsky=fsky)
+        tracers = [self.tracers[tr]["ccl_tracer"]
+                   for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
+        cov_ssc = self.cosmo.angular_cl_cov_SSC(tracer1=tracers[0], tracer2=tracers[1],
+                    tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
+                    t_of_kk_a=self.hm.tk_ssc, sigma2_B=sigma2_B,
+                    integration_method="spline")
+        return cov_ssc
 
-    def get_cov_cng(self, tracer1a, tracer2a, tracer1b, tracer2b):
+    def get_cov_cng(self, tracer1a, tracer2a, tracer1b, tracer2b, ells_a, ells_b):
         pass
 
 

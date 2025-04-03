@@ -1,12 +1,16 @@
+#!/usr/bin/env python
 import argparse
 import datetime
 import re
+from os import path
+import sys
 
 import numpy as np
 import sacc
 import yaml
 
 import nx2pt
+sys.path.insert(0, path.join(path.dirname(path.realpath(__file__)), "../code"))
 import ccl_interface
 
 
@@ -150,6 +154,41 @@ def calc_cov_margem(s, theory):
     return cov
 
 
+def calc_cov_ssc(s, theory):
+    """Compute covariance term due to marginalizing over shear m bias."""
+    cov = np.zeros((len(s.mean), len(s.mean)))
+    # loop over all power spectra in the sacc file
+    for tracers1 in s.get_tracer_combinations():
+        for dtype1 in s.get_data_types(tracers1):
+            # skip all B-modes
+            if 'b' in dtype1:
+                continue
+            ell_a, _, inds1 = s.get_ell_cl(dtype1, *tracers1, return_ind=True)
+            for tracers2 in s.get_tracer_combinations():
+                for dtype2 in s.get_data_types(tracers2):
+                    if 'b' in dtype2:
+                        continue
+                    ell_b, _, inds2 = s.get_ell_cl(dtype2, *tracers2, return_ind=True)
+                    # compute block
+                    block = theory.get_cov_ssc(*tracers1, *tracers2, ell_a, ell_b).T
+                    cov[np.ix_(inds1, inds2)] = block
+    return cov
+
+
+def add_non_gauss_cov(s, theory):
+    # sanity checks
+    for tracer in s.tracers.keys():
+        if tracer not in theory.tracers.keys():
+            raise ValueError("Theory object does not have the same tracers as the sacc file.")
+    s_new = s.copy()
+    # calculate new covariance
+    cov = s.covariance.covmat + calc_cov_ssc(s, theory)
+    s_new.add_covariance(cov, overwrite=True)
+    # add a metadata flag
+    s_new.metadata["non_gaussian_cov"] = True
+    return s_new
+
+
 def marginalize_m(s, theory):
     """Correct for any multiplicative biases and marginalize over their uncertainty."""
     # sanity checks
@@ -243,6 +282,18 @@ def main():
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = marginalize_m(s, theory)
+
+    # non-Gaussian covariance terms
+    if args.non_gaussian:
+        print("Computing non-Gaussian covariance terms...")
+        if theory is None and args.theory is not None:
+            print("Loading tracer info from", args.theory)
+            with open(args.theory) as f:
+                config = yaml.safe_load(f)
+                theory = ccl_interface.CCLTheory(config)
+        else:
+            raise ValueError("Must provide tracer info to calculate analytical covariances")
+        s = add_non_gauss_cov(s, theory)
 
     # save sacc file
     print("Writing sacc file...")
