@@ -48,7 +48,7 @@ def load_cosmosis_chain(fname, label=None):
         raise NotImplementedError(f"unknown sampler {sampler}")
     print("sampler:", sampler)
 
-    data = np.loadtxt(fname, comments='#')
+    data = np.atleast_2d(np.loadtxt(fname, comments='#'))
     remove_inds = []
     # remove duplicated parameters
     for param, inds in p_inds.items():
@@ -57,15 +57,15 @@ def load_cosmosis_chain(fname, label=None):
             if not is_equal:
                 raise RuntimeError(f"found different parameters with the same name: {param}")
             remove_inds += inds[1:]
-    print(remove_inds)
     mask = np.ones(len(params), dtype=bool)
     mask[remove_inds] = False
     data = data[:,mask]
     params = [p for i, p in enumerate(params) if i not in remove_inds]
 
-    print(len(params), data.shape)
-
     chain = samplers[sampler](params, data, header=header, label=label)
+    if isinstance(chain, getdist.MCSamples):
+        print(chain.getNumSampleSummaryText())
+
     # try to add derived parameters
     if isinstance(chain, getdist.MCSamples):
         param_list = chain.paramNames.list()
@@ -105,7 +105,8 @@ def load_nested(params, data, header=None, label=None):
         derived_params = []
 
     samples = getdist.MCSamples(samples=data, weights=weights,
-                                names=varied_params + derived_params, labels=get_latex_labels(params),
+                                names=varied_params + derived_params,
+                                labels=get_latex_labels(params),
                                 label=label, sampler="nested")
     return samples
 
@@ -123,8 +124,15 @@ def load_fisher(params, data, header=None, label=None):
     return gaussian
 
 
+def load_maxlike(params, data, header=None, label=None):
+    data = np.squeeze(data)
+    result = {p: data[i] for i, p in enumerate(params)}
+    return result
+
+
 samplers = {
         "nautilus": load_nested,
         "polychord": load_nested,
-        "fisher": load_fisher
+        "fisher": load_fisher,
+        "maxlike": load_maxlike
     }
