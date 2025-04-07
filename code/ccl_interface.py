@@ -78,14 +78,14 @@ def load_tracer():
 class CCLHaloModel:
     defaults = {
             "mdef": ccl.halos.MassDef200c,
-            "hmf": ccl.halos.MassFuncBocquet16,
+            "hmf": ccl.halos.MassFuncTinker10,
             "hbias": ccl.halos.HaloBiasTinker10,
             "conc": ccl.halos.ConcentrationDuffy08,
         }
 
-    k_arr = np.logspace(-4, 2, 20)
+    k_arr = np.logspace(-4, 2, 150)
     lk_arr = np.log(k_arr)
-    a_arr = np.linspace(0.01, 1, 20)
+    a_arr = np.linspace(0.01, 1, 25)
 
     suppress_1h = lambda a: 0.1
     smooth_transition = lambda a: 0.7
@@ -98,7 +98,9 @@ class CCLHaloModel:
         self.conc = (self.defaults["conc"] if conc is None else conc)(mass_def=self.mdef)
 
         self.hmc = ccl.halos.HMCalculator(mass_function=self.hmf, halo_bias=self.hbias, mass_def=self.mdef)
-
+        
+        # TODO: these quantities should be tracer dependent
+        # this current setup works for lensing only tracers, but will need to change to support galaxies
         self.nfw = ccl.halos.HaloProfileNFW(mass_def=self.mdef, concentration=self.conc)
         self.pMM = ccl.halos.Profile2pt()
 
@@ -174,19 +176,19 @@ class CCLTheory:
         return cov
 
     def get_fsky(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None):
-        if tracer2a is None:
-            tracer2a = tracer1a
-        if tracer1b is None:
-            tracer1b = tracer1a
-        if tracer2b is None:
-            tracer2b = tracer2a
+        if tracer2a is None: tracer2a = tracer1a
+        if tracer1b is None: tracer1b = tracer1a
+        if tracer2b is None: tracer2b = tracer2a
         masks = [self.tracers[tr]["sky_mask"]
                  for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         return np.mean(masks[0] * masks[1] * masks[2] * masks[3])
 
-    def get_cov_ssc(self, tracer1a, tracer2a, tracer1b, tracer2b, ells_a, ells_b):
+    def get_cov_ssc(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None, ells_a, ells_b=None):
+        """Compute the super-sample covariance term."""
+        if tracer2a is None: tracer2a = tracer1a
+        if tracer1b is None: tracer1b = tracer1a
+        if tracer2b is None: tracer2b = tracer2a
         fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
-        print(fsky)
         sigma2_B = self.cosmo.sigma2_B_disc(fsky=fsky)
         tracers = [self.tracers[tr]["ccl_tracer"]
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
@@ -196,14 +198,24 @@ class CCLTheory:
                     integration_method="spline")
         return cov_ssc
 
-    def get_cov_cng(self, tracer1a, tracer2a, tracer1b, tracer2b, ells_a, ells_b):
-        pass
-
+    def get_cov_cng(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None, ells_a, ells_b=None):
+        """Compte the connected non-Gaussian covariance term."""
+        if tracer2a is None: tracer2a = tracer1a
+        if tracer1b is None: tracer1b = tracer1a
+        if tracer2b is None: tracer2b = tracer2a
+        fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
+        tracers = [self.tracers[tr]["ccl_tracer"]
+                   for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
+        cov_ng = self.cosmo.angular_cl_cov_cNG(tracer1=tracers[0], tracer2=tracers[1],
+                    tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
+                    t_of_kk_a=self.hm.tk_1h, fsk=fsky,
+                    integration_method="spline")
+        return cov_ng
+        
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as f:
         config = yaml.safe_load(f)
 
     theory = CCLTheory(config)
-
     print(theory.tracers)
