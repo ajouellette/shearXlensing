@@ -60,6 +60,11 @@ components:
     no_ia:  # no IA
         pipeline:
             - del fast_pt IA add_intrinsic
+        params:
+            - pk_to_cl_shear.shear-intrinsic = F
+            - pk_to_cl_shear.intrinsic-intrinsic = F
+            - pk_to_cl_shear.intrinsicb-intrinsicb = F
+            - pk_to_cl_shear_kappa.intrinsic-cmbkappa = F
         values:
             - del intrinsic_alignment_parameters
     
