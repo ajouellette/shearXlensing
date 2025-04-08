@@ -20,6 +20,12 @@ components:
             - cosmological_parameters.n_s = 0.87  0.97  1.07
             - cosmological_parameters.h0 = 0.55  0.68  0.91
             - cosmological_parameters.A_s_1e9 = 0.5  2.4  5.0
+      
+submission:
+  template: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
+  time: 1-12:00:00
+  nodes: 1
+  tasks_per_node: 40
 
 runs:
     - name: planck_TT_planck_prior
@@ -43,11 +49,6 @@ runs:
       parent: planck_TT_des_prior
       components:
           - free_Alens
-      submission:
-          template: &template /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
-          time: 1-12:00:00
-          nodes: 1
-          tasks_per_node: 40
 
     - name: planck_TT_Alens_des_prior_fisher
       parent: planck_TT_Alens_des_prior
@@ -61,7 +62,4 @@ runs:
       pipeline:
           - replace planck_TT planck_TTTEEE
       submission:
-          template: *template
           time: 1-00:00:00
-          nodes: 1
-          tasks_per_node: 40
