@@ -1,61 +1,103 @@
-output_dir: /projects/caps/aaronjo2/shearXlensing/campaigns/gg
-include: /projects/caps/aaronjo2/shearXlensing/campaigns/components.yml
+output_dir: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/gg
+include: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/components.yml
 output_name: chain_{name}
 
 components:
     sampler: {params: [sampler = polychord]}
 
+submission:
+  template: /projects/ncsa/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
+  time: 1-00:00:00
+  nodes: 1
+  tasks_per_node: 40
+
 runs:
+
+    #####################################################
+    ## Fiducial DES-Y3 runs (based on Doux et al 2022) ##
+    #####################################################
+
     # try to replicate official results using offical data
     - name: gg_desy3_official_des_prior
       base: des-y3-spt-3g.ini
-      components:
-          - sampler
+      #components:
+      #    - sampler
       pipeline:
           - del sacc_like pk_to_cl_shear_kappa
           - append 2pt_like
       params:
+          - sampler = polychord
           - add_intrinsic.shear-cmbkappa = F
-      submission:
-          template: &template /projects/caps/aaronjo2/shearXlensing/campaigns/slurm_template.sh
-          time: 1-00:00:00
-          nodes: 1
-          tasks_per_node: 40
+
+    - name: gg_desy3_official_des_prior_nautilus
+      parent: gg_desy3_official_des_prior
+      params:
+        - sampler = nautilus
+
+    - name: gg_desy3_official_des_prior_fixm_nautilus
+      parent: gg_desy3_official_des_prior_nautilus
+      values:
+        - shear_calibration_parameters.m1 = -0.0063
+        - shear_calibration_parameters.m2 = -0.0198
+        - shear_calibration_parameters.m3 = -0.0241
+        - shear_calibration_parameters.m4 = -0.0369
+      priors:
+        - del shear_calibration_parameters
 
     # IA model variations using offical data
     - name: gg_desy3_official_des_prior_nla
       parent: gg_desy3_official_des_prior
       components:
           - nla_ia
-      submission:
-          template: *template
-          time: 0-16:00:00
-          nodes: 1
-          tasks_per_node: 40
 
     - name: gg_desy3_official_des_prior_no_ia
       parent: gg_desy3_official_des_prior_nla
       components:
           - no_ia
-      params:
-          - del pk_to_cl_shear.shear-intrinsic
-          - del pk_to_cl_shear.intrinsic-intrinsic
-          - del pk_to_cl_shear.intrinsicb-intrinsicb
-      submission:
-          template: *template
-          time: 0-08:00:00
-          nodes: 1
-          tasks_per_node: 40
 
     - name: gg_desy3_official_des_prior_gauss_ia_nla
       parent: gg_desy3_official_des_prior_nla
       components:
           - ia_gaussian_priors
+
+    - name: gg_desy3_official_planckTT_nla
+      parent: gg_desy3_official_des_prior_nla
+      params:
+          - sampler = maxlike
+      components:
+          - planck_TT_Alens
+          - no_scale_cuts
+          - feedback
+      submission: 
+        time: 1-12:00:00
+
+    - name: gg_desy3_official_planckTT_noia
+      parent: gg_desy3_official_des_prior_nla
+      params:
+          - sampler = maxlike
+      components:
+          - no_ia
+          - planck_TT_Alens
+          - no_scale_cuts
+          - feedback
+      submission: 
+        time: 1-12:00:00
+
+    - name: gg_desy3_official_planckTTTEEE_nla_Amod
+      parent: gg_desy3_official_des_prior_nla
+      components:
+          - planck_TTTEEE
+          - amod
       submission:
-          template: *template
-          time: 0-16:00:00
-          nodes: 1
-          tasks_per_node: 40
+        time: 1-12:00:00
+
+    - name: gg_desy3_official_planckTTTEEE_nla_logTagn
+      parent: gg_desy3_official_des_prior_nla
+      components:
+          - planck_TTTEEE
+          - feedback
+      submission:
+        time: 1-12:00:00
 
     # using "official" data, but only Gaussian covariance
 
@@ -67,3 +109,148 @@ runs:
           - append sacc_like
       params:
           - sacc_like.file = 
+
+    ####################################################
+    ## DES-Y3 blue shear runs (McCullough et al 2024) ##
+    ####################################################
+
+    - name: gg_blue_shear
+      base: des-y3-spt-3g.ini
+      components:
+        - feedback
+      pipeline:
+        - del fast_pt IA pk_to_cl_shear_kappa add_intrinsic
+      params:
+        - sampler = nautilus
+        - pk_to_cl_shear.shear-intrinsic = 
+        - pk_to_cl_shear.intrinsic-intrinsic = 
+        - fits_nz.nz_file = %(2pt_file_m24)s
+        - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/cross_spectra_blue_shear_nside2048.fits
+        - sacc_like.data_sets = cl_ee
+        - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 50. 2000.
+        - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 50. 2000.
+      values:
+        - del intrinsic_alignment_parameters
+      priors:
+        - wl_photoz_errors.bias_1 = gaussian 0.0 0.018
+        - wl_photoz_errors.bias_2 = gaussian 0.0 0.015
+        - wl_photoz_errors.bias_3 = gaussian 0.0 0.011
+        - wl_photoz_errors.bias_4 = gaussian 0.0 0.017
+        - shear_calibration_parameters.m1 = gaussian -0.0129 0.0091
+        - shear_calibration_parameters.m2 = gaussian -0.0180 0.0078
+        - shear_calibration_parameters.m3 = gaussian -0.0203 0.0076
+        - shear_calibration_parameters.m4 = gaussian -0.0356 0.0076
+
+    - name: gg_blue_shear_highell_cov_ssc
+      parent: gg_blue_shear
+      params:
+        - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/cross_spectra_blue_shear_nside2048_highell_cov_ssc.fits
+        - sacc_like.data_sets = cl_ee
+        - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 50. 4000.
+        - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 50. 4000.
+
+    - name: gg_blue_shear_planckTT
+      parent: gg_blue_shear
+      components: 
+        - planck_TT_Alens
+
+    - name: gg_blue_shear_cov_ssc
+      parent: gg_blue_shear
+      params:
+        - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/cross_spectra_blue_shear_nside2048_cov_ssc.fits
+
+    - name: gg_blue_shear_nla
+      parent: gg_blue_shear
+      pipeline:
+        - after camb fast_pt IA
+        - after pk_to_cl_shear add_intrinsic
+      params: 
+        - pk_to_cl_shear.shear-intrinsic = source-source
+        - pk_to_cl_shear.intrinsic-intrinsic = source-source
+        - IA.ia_model = nla
+        - add_intrinsic.shear-cmbkappa = F
+      values:
+        - intrinsic_alignment_parameters.a1 = -4.0 0.0 4.0
+        - intrinsic_alignment_parameters.alpha1 = -4.0 0.0 4.0
+      priors:
+        - intrinsic_alignment_parameters.alpha1 = gaussian 0.0 2.0
+
+    - name: gg_blue_shear_nla_planckTT
+      parent: gg_blue_shear_nla
+      components:
+        - planck_TT_Alens
+
+    - name: gg_blue_shear_nside1024
+      parent: gg_blue_shear
+      params:
+        - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/cross_spectra_blue_shear_nside2048.fits
+
+    - name: gg_blue_shear_scale_cuts
+      parent: gg_blue_shear
+      params:
+        - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 50.0 742.7
+        - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 50.0 341.0
+        - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 50.0 366.4
+        - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 50.0 321.9
+        - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 50.0 260.1
+        - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 50.0 300.8
+        - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 50.0 373.1
+        - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 50.0 291.5
+        - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 50.0 269.4
+        - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 50.0 367.9
+
+    - name: gg_blue_shear_scale_cuts_dm
+      parent: gg_blue_shear_scale_cuts
+      params:
+        - camb.halofit_version = mead2020
+      values:
+        - del halo_model_parameters
+
+    - name: gg_blue_shear_cat_fix_ns
+      parent: gg_blue_shear
+      params:
+        - sacc_like.data_file = /projects/ncsa/caps/aaronjo2/shearXlensing/data/cross_cls/cross_spectra_cmbk_blue_shear_cat_2x2_nside2048.fits
+      values:
+        - cosmological_parameters.n_s = 0.9665
+
+    - name: gg_blue_shear_official
+      base: des-y3-spt-3g.ini
+      components:
+        - feedback
+      pipeline:
+        - del fast_pt IA pk_to_cl_shear_kappa add_intrinsic sacc_like
+        - after pk_to_cl_shear cl_to_xi_shear
+        - append 2pt_like_xi
+      params:
+        - sampler = nautilus
+        - pk_to_cl_shear.shear-intrinsic = 
+        - pk_to_cl_shear.intrinsic-intrinsic = 
+        - fits_nz.nz_file = %(2pt_file_m24)s
+        - shear_m_bias.cl_section = shear_xi_plus shear_xi_minus
+      values:
+        - del intrinsic_alignment_parameters
+      priors:
+        - wl_photoz_errors.bias_1 = gaussian 0.0 0.018
+        - wl_photoz_errors.bias_2 = gaussian 0.0 0.015
+        - wl_photoz_errors.bias_3 = gaussian 0.0 0.011
+        - wl_photoz_errors.bias_4 = gaussian 0.0 0.017
+        - shear_calibration_parameters.m1 = gaussian -0.0129 0.0091
+        - shear_calibration_parameters.m2 = gaussian -0.0180 0.0078
+        - shear_calibration_parameters.m3 = gaussian -0.0203 0.0076
+        - shear_calibration_parameters.m4 = gaussian -0.0356 0.0076
