@@ -170,7 +170,7 @@ def calc_cov_ssc(s, theory):
                         continue
                     ell_b, _, inds2 = s.get_ell_cl(dtype2, *tracers2, return_ind=True)
                     # compute block
-                    block = theory.get_cov_ssc(*tracers1, *tracers2, ell_a, ell_b).T
+                    block = theory.get_cov_ssc(*tracers1, ell_a, *tracers2, ell_b).T
                     cov[np.ix_(inds1, inds2)] = block
     return cov
 

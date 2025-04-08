@@ -168,7 +168,6 @@ class CCLTheory:
         if bpws_b is None: bpws_b = bpws
         ell = np.arange(max(bpws.shape[1], bpws_b.shape[1]))
 
-
         cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
         cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws_b)
 
@@ -183,13 +182,12 @@ class CCLTheory:
                  for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         return np.mean(masks[0] * masks[1] * masks[2] * masks[3])
 
-    def get_cov_ssc(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None, ells_a, ells_b=None):
+    def get_cov_ssc(self, tracer1a, tracer2a, ells_a, tracer1b=None, tracer2b=None, ells_b=None):
         """Compute the super-sample covariance term."""
-        if tracer2a is None: tracer2a = tracer1a
-        if tracer1b is None: tracer1b = tracer1a
-        if tracer2b is None: tracer2b = tracer2a
         fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
         sigma2_B = self.cosmo.sigma2_B_disc(fsky=fsky)
+        if tracer1b is None: tracer1b = tracer1a
+        if tracer2b is None: tracer2b = tracer2a
         tracers = [self.tracers[tr]["ccl_tracer"]
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         cov_ssc = self.cosmo.angular_cl_cov_SSC(tracer1=tracers[0], tracer2=tracers[1],
@@ -198,12 +196,11 @@ class CCLTheory:
                     integration_method="spline")
         return cov_ssc
 
-    def get_cov_cng(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None, ells_a, ells_b=None):
+    def get_cov_cng(self, tracer1a, tracer2a, ells_a, tracer1b=None, tracer2b=None, ells_b=None):
         """Compte the connected non-Gaussian covariance term."""
-        if tracer2a is None: tracer2a = tracer1a
+        fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
         if tracer1b is None: tracer1b = tracer1a
         if tracer2b is None: tracer2b = tracer2a
-        fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
         tracers = [self.tracers[tr]["ccl_tracer"]
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         cov_ng = self.cosmo.angular_cl_cov_cNG(tracer1=tracers[0], tracer2=tracers[1],
