@@ -69,6 +69,10 @@ def load_cosmosis_chain(fname, label=None):
     # try to add derived parameters
     if isinstance(chain, getdist.MCSamples):
         param_list = chain.paramNames.list()
+        # likelihoood values
+        if "like" not in param_list and "post" in param_list and "prior" in param_list:
+            like = chain.getParams().post - chain.getParams().prior
+            chain.addDerived(like, "like")
         # get S8
         if "omega_m" in param_list and "sigma_8" in param_list and "s_8" not in param_list:
             s_8 = chain.getParams().sigma_8 * np.sqrt(chain.getParams().omega_m/0.3)
@@ -100,11 +104,26 @@ def load_nested(params, data, header=None, label=None):
         varied_params = params[:n_varied]
         # mark derived params
         derived_params = [p+'*' for p in params[n_varied:]]
+        # find allowed ranges of varied parameters
+        ranges = {}
+        in_values_section = False
+        for line in header:
+            if "START_OF_VALUES_INI" in line:
+                in_values_section = True
+                continue
+            if in_values_section and '=' in line:
+                param = line.split('=')[0].lstrip('#').strip()
+                if param in varied_params:
+                    values = list(map(float, line.split('=')[1].split()))
+                    ranges[param] = [values[0], values[-1]]
+            if "END_OF_VALUES_INI" in line:
+                break
     else:
         varied_params = params
         derived_params = []
+        ranges = None
 
-    samples = getdist.MCSamples(samples=data, weights=weights,
+    samples = getdist.MCSamples(samples=data, weights=weights, ranges=ranges,
                                 names=varied_params + derived_params,
                                 labels=get_latex_labels(params),
                                 label=label, sampler="nested")
