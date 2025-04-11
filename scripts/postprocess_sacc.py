@@ -154,8 +154,10 @@ def calc_cov_margem(s, theory):
     return cov
 
 
-def calc_cov_ssc(s, theory):
+def calc_cov_ng(s, theory, kind="ssc"):
     """Compute covariance term due to marginalizing over shear m bias."""
+    if kind not in ["ssc", "cng", "both"]:
+        raise ValueError
     cov = np.zeros((len(s.mean), len(s.mean)))
     # loop over all power spectra in the sacc file
     for tracers1 in s.get_tracer_combinations():
@@ -170,19 +172,24 @@ def calc_cov_ssc(s, theory):
                         continue
                     ell_b, _, inds2 = s.get_ell_cl(dtype2, *tracers2, return_ind=True)
                     # compute block
-                    block = theory.get_cov_ssc(*tracers1, ell_a, *tracers2, ell_b).T
+                    if kind == "ssc" or kind == "both":
+                        block = theory.get_cov_ssc(*tracers1, ell_a, *tracers2, ell_b).T
+                        if kind == "both":
+                            block += theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b).T
+                    else:
+                        block = theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b).T
                     cov[np.ix_(inds1, inds2)] = block
     return cov
 
 
-def add_non_gauss_cov(s, theory):
+def add_non_gauss_cov(s, theory, kind="ssc"):
     # sanity checks
     for tracer in s.tracers.keys():
         if tracer not in theory.tracers.keys():
             raise ValueError("Theory object does not have the same tracers as the sacc file.")
     s_new = s.copy()
     # calculate new covariance
-    cov = s.covariance.covmat + calc_cov_ssc(s, theory)
+    cov = s.covariance.covmat + calc_cov_ng(s, theory, kind=kind)
     s_new.add_covariance(cov, overwrite=True)
     # add a metadata flag
     s_new.metadata["non_gaussian_cov"] = True
@@ -244,7 +251,9 @@ def main():
     parser.add_argument("--cmbk-tf", help="correct for a CMB lensing transfer function")
     parser.add_argument("-m", "--marg-shear-bias", action="store_true", help="marginalize over shear multiplicative bias")
     parser.add_argument("-t", "--theory", help="file describing tracers and how to calculate theory spectra")
-    parser.add_argument("--non-gaussian", action="store_true", help="compute non-Gaussian covariance terms")
+    parser.add_argument("--non-gaussian", action="store_true", help="compute non-Gaussian covariance terms (SSC + cNG)")
+    parser.add_argument("--ssc", action="store_true", help="compute SSC term")
+    parser.add_argument("--cng", action="store_true", help="compute cNG term")
     
     theory = None
     args = parser.parse_args()
@@ -284,8 +293,16 @@ def main():
         s = marginalize_m(s, theory)
 
     # non-Gaussian covariance terms
-    if args.non_gaussian:
-        print("Computing non-Gaussian covariance terms...")
+    if args.non_gaussian or args.ssc or args.cng:
+        if args.ssc and not args.cng:
+            kind = "ssc"
+            print("Computing super-sample covariance terms...")
+        if args.cng and not args.ssc:
+            kind = "cng"
+            print("Computing connected non-Gaussian covariance terms...")
+        else:
+            kind = "both"
+            print("Computing non-Gaussian covariance terms (SSC + cNG)...")
         if theory is None and args.theory is not None:
             print("Loading tracer info from", args.theory)
             with open(args.theory) as f:
@@ -293,7 +310,7 @@ def main():
                 theory = ccl_interface.CCLTheory(config)
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
-        s = add_non_gauss_cov(s, theory)
+        s = add_non_gauss_cov(s, theory, kind=kind)
 
     # save sacc file
     print("Writing sacc file...")
