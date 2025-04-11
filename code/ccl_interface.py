@@ -205,7 +205,7 @@ class CCLTheory:
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         cov_ng = self.cosmo.angular_cl_cov_cNG(tracer1=tracers[0], tracer2=tracers[1],
                     tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
-                    t_of_kk_a=self.hm.tk_1h, fsk=fsky,
+                    t_of_kk_a=self.hm.tk_1h, fsky=fsky,
                     integration_method="spline")
         return cov_ng
         
