@@ -1,3 +1,4 @@
+from functools import cache
 import sys
 import yaml
 import numpy as np
@@ -100,14 +101,42 @@ class CCLHaloModel:
         self.hmc = ccl.halos.HMCalculator(mass_function=self.hmf, halo_bias=self.hbias, mass_def=self.mdef)
         
         # TODO: these quantities should be tracer dependent
-        # this current setup works for lensing only tracers, but will need to change to support galaxies
+        # this current setup works for lensing only tracers, but will need to change 
+        #    to support biased tracers
         self.nfw = ccl.halos.HaloProfileNFW(mass_def=self.mdef, concentration=self.conc)
         self.pMM = ccl.halos.Profile2pt()
 
-        self.tk_1h = ccl.halos.pk_4pt.halomod_Tk3D_1h(self.cosmo, self.hmc, self.nfw,
-                                                      lk_arr=self.lk_arr, a_arr=self.a_arr)
-        self.tk_ssc = ccl.halos.pk_4pt.halomod_Tk3D_SSC(cosmo=self.cosmo, hmc=self.hmc, prof=self.nfw,
-                                                        lk_arr=self.lk_arr, a_arr=self.a_arr)
+
+    # TODO: need some way of efficiently supporting biased tracers
+    @cache
+    def get_tk_m_cng(self, full=True, separable_growth=True):
+        """
+        Compute the connected non-Gaussian trispectrum for the matter field.
+        
+        Parameters:
+        full: bool - calculate the full trispectrum or just the 1-halo term
+        separable_growth: bool - use the separable growth function approximation to
+                                 speed up the computation
+
+        """
+        if not full:
+            # only compute 1h term
+            tk = ccl.halos.pk_4pt.halomod_Tk3D_1h(self.cosmo, self.hmc, self.nfw,
+                                                  lk_arr=self.lk_arr, a_arr=self.a_arr)
+        else:
+            tk = ccl.halos.pk_4pt.halomod_Tk3D_cng(self.cosmo, self.hmc, self.nfw, 
+                                                   lk_arr=self.lk_arr, a_arr=self.a_arr,
+                                                   separable_growth=separable_growth)
+        return tk
+
+    @cache
+    def get_tk_m_ssc(self):
+        """
+        Compute the super-sample covariance trispectrum for the matter field.
+        """
+        tk = ccl.halos.pk_4pt.halomod_Tk3D_SSC(self.cosmo, self.hmc, self.nfw,
+                                               lk_arr=self.lk_arr, a_arr=self.a_arr)
+        return tk
 
 
 class CCLTheory:
@@ -190,23 +219,23 @@ class CCLTheory:
         if tracer2b is None: tracer2b = tracer2a
         tracers = [self.tracers[tr]["ccl_tracer"]
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
+        tk_ssc = self.hm.get_tk_m_ssc()
         cov_ssc = self.cosmo.angular_cl_cov_SSC(tracer1=tracers[0], tracer2=tracers[1],
                     tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
-                    t_of_kk_a=self.hm.tk_ssc, sigma2_B=sigma2_B,
-                    integration_method="spline").T
+                    t_of_kk_a=tk_ssc, sigma2_B=sigma2_B, integration_method="spline").T
         return cov_ssc
 
-    def get_cov_cng(self, tracer1a, tracer2a, ells_a, tracer1b=None, tracer2b=None, ells_b=None):
+    def get_cov_cng(self, tracer1a, tracer2a, ells_a, tracer1b=None, tracer2b=None, ells_b=None, full=True, separable_growth=True):
         """Compte the connected non-Gaussian covariance term."""
         fsky = self.get_fsky(tracer1a, tracer2a, tracer1b, tracer2b)
         if tracer1b is None: tracer1b = tracer1a
         if tracer2b is None: tracer2b = tracer2a
         tracers = [self.tracers[tr]["ccl_tracer"]
                    for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
+        tk_cng = self.hm.get_tk_m_cng(full=full, separable_growth=separable_growth)
         cov_ng = self.cosmo.angular_cl_cov_cNG(tracer1=tracers[0], tracer2=tracers[1],
                     tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
-                    t_of_kk_a=self.hm.tk_1h, fsky=fsky,
-                    integration_method="spline").T
+                    t_of_kk_a=tk_cng, fsky=fsky, integration_method="spline").T
         return cov_ng
         
 
