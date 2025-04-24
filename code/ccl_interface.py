@@ -193,7 +193,7 @@ class CCLTheory:
         cov_ssc = self.cosmo.angular_cl_cov_SSC(tracer1=tracers[0], tracer2=tracers[1],
                     tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
                     t_of_kk_a=self.hm.tk_ssc, sigma2_B=sigma2_B,
-                    integration_method="spline")
+                    integration_method="spline").T
         return cov_ssc
 
     def get_cov_cng(self, tracer1a, tracer2a, ells_a, tracer1b=None, tracer2b=None, ells_b=None):
@@ -206,7 +206,7 @@ class CCLTheory:
         cov_ng = self.cosmo.angular_cl_cov_cNG(tracer1=tracers[0], tracer2=tracers[1],
                     tracer3=tracers[2], tracer4=tracers[3], ell=ells_a, ell2=ells_b,
                     t_of_kk_a=self.hm.tk_1h, fsky=fsky,
-                    integration_method="spline")
+                    integration_method="spline").T
         return cov_ng
         
 

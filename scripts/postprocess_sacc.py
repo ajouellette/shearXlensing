@@ -173,11 +173,11 @@ def calc_cov_ng(s, theory, kind="ssc"):
                     ell_b, _, inds2 = s.get_ell_cl(dtype2, *tracers2, return_ind=True)
                     # compute block
                     if kind == "ssc" or kind == "both":
-                        block = theory.get_cov_ssc(*tracers1, ell_a, *tracers2, ell_b).T
+                        block = theory.get_cov_ssc(*tracers1, ell_a, *tracers2, ell_b)
                         if kind == "both":
-                            block += theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b).T
+                            block += theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b)
                     else:
-                        block = theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b).T
+                        block = theory.get_cov_cng(*tracers1, ell_a, *tracers2, ell_b)
                     cov[np.ix_(inds1, inds2)] = block
     return cov
 
@@ -297,7 +297,7 @@ def main():
         if args.ssc and not args.cng:
             kind = "ssc"
             print("Computing super-sample covariance terms...")
-        if args.cng and not args.ssc:
+        elif args.cng and not args.ssc:
             kind = "cng"
             print("Computing connected non-Gaussian covariance terms...")
         else:
