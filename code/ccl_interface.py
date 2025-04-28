@@ -10,10 +10,20 @@ import nx2pt
 
 
 def get_cosmo(params):
+    """
+    Construct a CCL cosmology object from given parameters.
+    """
     return ccl.Cosmology(**params)
     
 
 def get_dndz_fits(fits_file, section):
+    """
+    Load a dn/dz from a twopoint fits file.
+
+    Parameters:
+    fits_file: str - name of fits file (must be twopoint format)
+    section: str - section name to load dn/dz from, format: '[name] [bin]'
+    """
     data = fitsio.FITS(fits_file)
     name, bin_name = section.split()
     z = data[name]["Z_MID"][:]
@@ -23,6 +33,9 @@ def get_dndz_fits(fits_file, section):
 
 
 def apply_photoz_bias(dndz, delta_z):
+    """
+    Apply a photo-z bias to given dn/dz.
+    """
     dndz_f = interpolate.interp1d(*dndz, kind="cubic", fill_value=0, bounds_error=False)
     z = dndz[0]
     dndz_new = dndz_f(z - delta_z)
@@ -124,7 +137,7 @@ class CCLHaloModel:
             tk = ccl.halos.pk_4pt.halomod_Tk3D_1h(self.cosmo, self.hmc, self.nfw,
                                                   lk_arr=self.lk_arr, a_arr=self.a_arr)
         else:
-            tk = ccl.halos.pk_4pt.halomod_Tk3D_cng(self.cosmo, self.hmc, self.nfw, 
+            tk = ccl.halos.pk_4pt.halomod_Tk3D_cNG(self.cosmo, self.hmc, self.nfw, 
                                                    lk_arr=self.lk_arr, a_arr=self.a_arr,
                                                    separable_growth=separable_growth)
         return tk
