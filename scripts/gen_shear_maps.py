@@ -61,6 +61,11 @@ def main():
         hp.write_map(save_name_mask, w_map, overwrite=True)
         mask_b = w_map > 0
 
+        # calculate avg number of galaxies per pixel
+        nmap = make_healpix_map(nside, ipix=ipix)
+        print(f"number of galaxies per pixel (min / mean / max): {np.min(nmap[mask_b])} / {np.mean(nmap[mask_b]):.2f} / {np.max(nmap[mask_b])}")
+        print(f"weighted avg number of galaxies per pixel: {np.average(nmap[mask_b], weights=w_map[mask_b]):.2f}")
+
         # weighted shear maps
         if overwrite or not path.exists(save_name_maps): 
             print("computing shear maps...")
@@ -90,7 +95,7 @@ def main():
 
     # write shot noise estimates
     with open(path.join(save_dir, f"shot_noise_ests_nside{nside}.txt"), 'w') as f:
-        lines = [f"{cat_file}: {shot_noise_vals[i]:.5e}" for i, cat_file in enumerate(cat_files)]
+        lines = [f"{cat_file}: {shot_noise_vals[i]:.7e}" for i, cat_file in enumerate(cat_files)]
         f.write('\n'.join(lines))
 
 
