@@ -64,12 +64,9 @@ def standardize_sacc(s, fix_bin_numbers=False):
 def new_sacc_with_tracers(s):
     """Create an "empty copy" of s."""
     s_new = sacc.Sacc()
-    # copy metadata, but update creation date
+    # copy metadata
     for key in s.metadata.keys():
-        if key in ["creation", "created", "creation_date", "creation_time"]:
-            s_new.metadata[key] = datetime.date.today().isoformat()
-        else:
-            s_new.metadata[key] = s.metadata[key]
+        s_new.metadata[key] = s.metadata[key]
     # copy over tracer objects
     for tracer in s.tracers.values():
         s_new.add_tracer_object(tracer)
@@ -312,11 +309,23 @@ def main():
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = add_non_gauss_cov(s, theory, kind=kind)
 
+    def update_timestamp(s, modified=False):
+        if modified:
+            s.metadata["modified"] = datetime.date.today().isoformat()
+            return
+        for key in s.metadata.keys():
+            if key in ["creation", "created", "creation_date", "creation_time"]:
+                s.metadata[key] = datetime.date.today().isoformat()
+                return
+        s.metadata["created"] = datetime.date.today().isoformat()
+
     # save sacc file
     print("Writing sacc file...")
     if args.output is not None:
+        update_timestamp(s, modified=False)
         s.save_fits(args.output, overwrite=True)
     else:
+        update_timestamp(s, modified=True)
         s.save_fits(args.sacc_file, overwrite=True)
 
 
