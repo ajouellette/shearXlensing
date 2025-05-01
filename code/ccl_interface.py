@@ -197,24 +197,30 @@ class CCLTheory:
             cl = nx2pt.bin_theory_cl(cl, bpws)
         return cl
 
-    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None):
+    def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, method="des"):
         """Compute the extra covariance term due to analytically marginalizing over multiplicative bias."""
         sigma_m1a = self.tracers[tracer1a]["args"].get("sigma_m", 0)
         sigma_m2a = self.tracers[tracer2a]["args"].get("sigma_m", 0)
         sigma_m1b = self.tracers[tracer1b]["args"].get("sigma_m", 0)
         sigma_m2b = self.tracers[tracer2b]["args"].get("sigma_m", 0)
-
-        prior_factor = sigma_m1a * sigma_m1b + sigma_m1a * sigma_m2b + \
-                       sigma_m2a * sigma_m1b + sigma_m2a * sigma_m2b
-
+        
         if bpws_b is None: bpws_b = bpws
         ell = np.arange(max(bpws.shape[1], bpws_b.shape[1]))
-
         cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
         cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws_b)
+        cov = np.outer(cl_a, cl_b)
 
-        cov = prior_factor * np.outer(cl_a, cl_b)
-        return cov
+        if method == "kids":
+            # KiDS method: m_i values are fully correlated
+            prior_factor = sigma_m1a * sigma_m1b + sigma_m1a * sigma_m2b + \
+                           sigma_m2a * sigma_m1b + sigma_m2a * sigma_m2b
+        elif method == "des":
+            # DES method: m_i values vary independently
+            prior_factor = sigma_m1a**2 * (tracer1a == tracer1b) + sigma_m1a**2 * (tracer1a == tracer2b) + \
+                           sigma_m2a**2 * (tracer2a == tracer1b) + sigma_m2a**2 * (tracer2a == tracer2b)
+        else:
+            raise ValueError("method must be either 'kids' or 'des'")
+        return prior_factor * cov
 
     def get_fsky(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None):
         if tracer2a is None: tracer2a = tracer1a

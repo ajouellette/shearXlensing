@@ -126,7 +126,7 @@ def correct_cmbk_tf(s, tf):
     return s_new
 
 
-def calc_cov_margem(s, theory):
+def calc_cov_margem(s, theory, method="des"):
     """Compute covariance term due to marginalizing over shear m bias."""
     cov = np.zeros((len(s.mean), len(s.mean)))
     # loop over all power spectra in the sacc file
@@ -146,7 +146,7 @@ def calc_cov_margem(s, theory):
                     bpws_b = s.get_bandpower_windows(inds2).weight.T
                     # compute block
                     block = theory.get_cov_marg_m(*tracers1, *tracers2,
-                                                   bpws=bpws, bpws_b=bpws_b)
+                                                   bpws=bpws, bpws_b=bpws_b, method=method)
                     cov[np.ix_(inds1, inds2)] = block
     return cov
 
@@ -247,6 +247,7 @@ def main():
     parser.add_argument("--from-sacc", help="use covariance from another sacc file")
     parser.add_argument("--cmbk-tf", help="correct for a CMB lensing transfer function")
     parser.add_argument("-m", "--marg-shear-bias", action="store_true", help="marginalize over shear multiplicative bias")
+    parser.add_argument("--marg-method", default="des", choices=["des", "kids"], help="method used to marginalize over shear bias")
     parser.add_argument("-t", "--theory", help="file describing tracers and how to calculate theory spectra")
     parser.add_argument("--non-gaussian", action="store_true", help="compute non-Gaussian covariance terms (SSC + cNG)")
     parser.add_argument("--ssc", action="store_true", help="compute SSC term")
@@ -287,7 +288,7 @@ def main():
                 theory = ccl_interface.CCLTheory(config)
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
-        s = marginalize_m(s, theory)
+        s = marginalize_m(s, theory, method=args.marg_method)
 
     # non-Gaussian covariance terms
     if args.non_gaussian or args.ssc or args.cng:
