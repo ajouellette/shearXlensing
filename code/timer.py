@@ -14,4 +14,4 @@ class Timer:
 
     def __exit__(self, *args):
         self.t2 = time.perf_counter()
-        print(f"  ({self.t2 - self.t1:.2f} sec)")
+        print(f"{self.description}  Done in {self.t2 - self.t1:.2f} sec")
