@@ -55,7 +55,7 @@ components:
         params:
             - camb.halofit_version = mead2020_feedback
         values:
-            - halo_model_parameters.logT_agn = 7.6  7.8  8.3
+            - halo_model_parameters.logT_agn = 7.3  7.8  8.3
 
     no_ia:  # no IA
         pipeline:
