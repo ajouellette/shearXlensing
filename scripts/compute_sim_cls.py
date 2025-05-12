@@ -15,21 +15,21 @@ from timer import Timer
 from agora_rotations import get_rotator
 
 
-def get_g_mock_cat(sim_dir, nside, rot):
-    pattern = "shear/mock_cats/desy3_mockcat_zbin{zbin}_rot{rot:02}.fits"
+def get_g_mock_cat(sim_dir, nside, rot, cat="fiducial"):
+    pattern = "shear/mock_cats/{cat}/desy3_mockcat_zbin{zbin}_rot{rot:02}.fits"
     lmax = 3*nside - 1
     tracers = []
     for zbin in range(1, 5):
-        cat = Table.read(path.join(sim_dir, pattern.format(zbin=zbin, rot=rot)))
+        cat = Table.read(path.join(sim_dir, pattern.format(zbin=zbin, rot=rot, cat=cat)))
         tracer = nx2pt.CatalogTracer(f"shear zbin {zbin} rot {rot}", [cat["ra"], cat["dec"]],
                                      cat["weight"], lmax, fields=[cat["g_1"], cat["g_2"]])
         tracers.append(tracer)
     return tracers
 
 
-def get_g_mock_map(sim_dir, nside, rot):
-    pattern = "shear/mock_maps/desy3_zbin{zbin}_rot{rot:02}_nside{nside}_{map}.fits"
-    shot_noise_file = path.join(sim_dir, f"shear/mock_maps/shot_noise_ests_nside{nside}.txt")
+def get_g_mock_map(sim_dir, nside, rot, cat="fiducial"):
+    pattern = "shear/mock_maps/{cat}/desy3_zbin{zbin}_rot{rot:02}_nside{nside}_{map}.fits"
+    shot_noise_file = path.join(sim_dir, f"shear/mock_maps/{cat}/shot_noise_ests_nside{nside}.txt")
     shot_noise_ests = {}
     if path.exists(shot_noise_file):
         with open(shot_noise_file) as f:
@@ -38,8 +38,8 @@ def get_g_mock_map(sim_dir, nside, rot):
                 shot_noise_ests[key] = float(val)
     tracers = []
     for zbin in range(1, 5):
-        mask = hp.read_map(path.join(sim_dir, pattern.format(zbin=zbin, rot=rot, nside=nside, map="mask")))
-        maps = hp.read_map(path.join(sim_dir, pattern.format(zbin=zbin, rot=rot, nside=nside, map="shearmaps")), field=None)
+        mask = hp.read_map(path.join(sim_dir, pattern.format(cat=cat, zbin=zbin, rot=rot, nside=nside, map="mask")))
+        maps = hp.read_map(path.join(sim_dir, pattern.format(cat=cat, zbin=zbin, rot=rot, nside=nside, map="shearmaps")), field=None)
         tracer = nx2pt.MapTracer(f"shear zbin {zbin} rot {rot}", maps, mask, beam=hp.pixwin(nside))
         for key in shot_noise_ests:
             if f"zbin{zbin}_rot{rot:02}" in key:
@@ -110,6 +110,9 @@ fields = {
         "shear_mock_cat": get_g_mock_cat,
         "shear_mock_map": get_g_mock_map,
         "shear_true": get_g_true_map,
+
+        "shear_mock_cat_less_noise": partial(get_g_mock_cat, cat="less_noise"),
+        "shear_mock_map_less_noise": partial(get_g_mock_map, cat="less_noise"),
 
         "cmbk_mock": get_k_mock_map,
         "cmbk_mock_bmask": partial(get_k_mock_map, binary_mask=True),
@@ -187,16 +190,18 @@ if __name__ == "__main__":
 
                     if rot_i == 0:
                         with Timer("computing cov..."):
-                            # compute covariance for single realization (spin-0 approx)
+                            # compute covariance for single realization
                             cov_wksp = nx2pt.get_cov_workspace(field1.field, field2.field, wksp_cache=wksp_cache)
                             pcl1 = nmt.compute_coupled_cell(field1.field, field1.field)
                             fsky1 = np.mean(field1.mask**2)
                             pcl2 = nmt.compute_coupled_cell(field2.field, field2.field)
                             fsky2 = np.mean(field2.mask**2)
                             fsky_cross = np.mean(field1.mask * field2.mask)
-
-                            cov = nmt.gaussian_covariance(cov_wksp, *[0,]*4, pcl1[:1] / fsky1, *[cl[:1] / fsky_cross,]*2, pcl2[:1] / fsky2, wksp)
-                            covs.append(cov)
+                            spins = [field1.spin, field2.spin, field1.spin, field2.spin]
+                            cov = nmt.gaussian_covariance(cov_wksp, *spins, pcl1 / fsky1, *[cl / fsky_cross,]*2, pcl2 / fsky2, wksp)
+                            nbpws = len(ell_eff)
+                            cov = cov.reshape((nbpws, len(cl), nbpws, len(cl)))
+                            covs.append(cov[:,0,:,0])
 
                     if field1 is field2 and hasattr(field1, "shot_noise"):
                         print("subtracting shot noise...")
