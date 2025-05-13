@@ -51,9 +51,24 @@ def get_g_mock_map(sim_dir, nside, rot, cat="fiducial"):
     return tracers
 
 
-def get_g_true_map(sim_dir, nside, rot):
-    pattern = "shear/mock_cats/desy3_mockcat_zbin{zbin}_rot{rot:02}.fits"
+def get_g_true_map(sim_dir, nside, rot, masked=True, ia=True):
+    alm_file = "shear/fullsky/alms/raytrace_kg1g2_des_y3_metacal_srcs_zbin{zbin}_fullsky_rot_alms.npz"
+    alm_ia_file = "shear/fullsky/alms/raytrace_IAkg1g2_des_y3_metacal_srcs_zbin{zbin}_fullsky_IA_0.44_-0.70_0.62_rot_alms.npz"
+    mask_file = "shear/mock_maps/fiducial/desy3_zbin{zbin}_rot01_nside{nside}_mask.fits"
     tracers = []
+    for zbin in range(1, 5):
+        with np.load(path.join(sim_dir, alm_file.format(zbin=zbin))) as f:
+            alm = f[str(rot)]
+        if ia:
+            with np.load(path.join(sim_dir, alm_ia_file.format(zbin=zbin))) as f:
+                alm += f[str(rot)]
+        shear_maps = hp.alm2map_spin(alm, nside, 2, hp.Alm.getlmax(len(alm[0])))
+        if masked:
+            mask = hp.read_map(path.join(sim_dir, mask_file.format(zbin=zbin, nside=nside)))
+        else:
+            mask = np.ones(hp.nside2npix(nside))
+        tracer = nx2pt.MapTracer(f"shear zbin {zbin} rot {rot}", shear_maps, mask)
+        tracers.append(tracer)
     return tracers
 
 
@@ -110,6 +125,7 @@ fields = {
         "shear_mock_cat": get_g_mock_cat,
         "shear_mock_map": get_g_mock_map,
         "shear_true": get_g_true_map,
+        "shear_true_no_ia": partial(get_g_true_map, ia=False),
 
         "shear_mock_cat_less_noise": partial(get_g_mock_cat, cat="less_noise"),
         "shear_mock_map_less_noise": partial(get_g_mock_map, cat="less_noise"),
@@ -134,12 +150,12 @@ if __name__ == "__main__":
     parser.add_argument("sim_dir")
     parser.add_argument("field1")
     parser.add_argument("field2")
-    parser.add_argument("--nside", default=2048, type=int)
+    parser.add_argument("--nside", default=2048, type=int, help="default: 2048")
     parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--lmin", type=int, default=30)
-    parser.add_argument("--lmax", type=int, default=3500)
-    parser.add_argument("--n-bins", type=int, default=24)
-    parser.add_argument("--binning", default="linear", choices=["linear", "sqrt", "log"])
+    parser.add_argument("--lmin", type=int, default=30, help="default: 30")
+    parser.add_argument("--lmax", type=int, default=3500, help="default: 3500")
+    parser.add_argument("--n-bins", type=int, default=24, help="default: 24")
+    parser.add_argument("--binning", default="linear", choices=["linear", "sqrt", "log"], help="default: linear")
     args = parser.parse_args()
 
     if args.field1 not in fields:
@@ -188,7 +204,7 @@ if __name__ == "__main__":
                     wksp = nx2pt.get_workspace(field1.field, field2.field, bins, wksp_cache=wksp_cache)
                     cl = nmt.compute_coupled_cell(field1.field, field2.field)
 
-                    if rot_i == 0:
+                    if rot_i == 0 and not (field1.is_cat_field or field2.is_cat_field):
                         with Timer("computing cov..."):
                             # compute covariance for single realization
                             cov_wksp = nx2pt.get_cov_workspace(field1.field, field2.field, wksp_cache=wksp_cache)
