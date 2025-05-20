@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--nside", default=2048, type=int)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("-o", "--output")
+    parser.add_argument("--extra-mask")
     parser.add_argument("--pattern", default="*.fits")
     parser.add_argument("--do-psf", action="store_true")
     args = parser.parse_args()
@@ -38,6 +39,13 @@ def main():
         save_dir = args.output
     print("saving maps to:", save_dir, '\n')
     os.makedirs(save_dir, exist_ok=True)
+
+    if args.extra_mask is not None:
+        print("will apply extra mask:", args.extra_mask)
+        extra_mask = hp.read_map(args.extra_mask)
+        assert hp.npix2nside(len(extra_mask)) == args.nside
+    else:
+        extra_mask = None
 
     shot_noise_vals = []
     for cat_file in cat_files:
@@ -58,6 +66,8 @@ def main():
         # weights map
         print("computing mask...")
         w_map = make_healpix_map(nside, ipix=ipix, vals=cat["weight"])
+        if extra_mask is not None:
+            w_map *= extra_mask
         hp.write_map(save_name_mask, w_map, overwrite=True)
         mask_b = w_map > 0
 
