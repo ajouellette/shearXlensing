@@ -156,6 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--lmax", type=int, default=3500, help="default: 3500")
     parser.add_argument("--n-bins", type=int, default=24, help="default: 24")
     parser.add_argument("--binning", default="linear", choices=["linear", "sqrt", "log"], help="default: linear")
+    parser.add_argument("--symmetric", action="store_true", help="assume that cl_12 == cl_21 for all bins in field1 and field2, default: False")
     args = parser.parse_args()
 
     if args.field1 not in fields:
@@ -191,6 +192,9 @@ if __name__ == "__main__":
             else:
                 fields2 = fields[args.field2](args.sim_dir, args.nside, rot)
             print("Field 2:", fields2)
+
+        if args.symmetric and len(fields1) != len(fields2):
+            raise ValueError("cannot assume symmetric fields if they have different number of bins")
         
         # calculate all cross-spectra
         cls_rot = []
@@ -200,6 +204,8 @@ if __name__ == "__main__":
             bpws = []
             covs = []
             for j, field2 in enumerate(fields2):
+                if j < i and args.symmetric:
+                    continue
                 with Timer(f"computing Cl {field1.name} x {field2.name}..."):
                     wksp = nx2pt.get_workspace(field1.field, field2.field, bins, wksp_cache=wksp_cache)
                     cl = nmt.compute_coupled_cell(field1.field, field2.field)
@@ -231,10 +237,17 @@ if __name__ == "__main__":
                     cl = wksp.decouple_cell(cl)
                 cls.append(cl)
                 bpws.append(wksp.get_bandpower_windows())
-            cls_rot.append(cls)
-            bpws_rot.append(bpws)
+            if args.symmetric:
+                cls_rot.extend(cls)
+                bpws_rot.extend(bpws)
+            else:
+                cls_rot.append(cls)
+                bpws_rot.append(bpws)
             if rot_i == 0:
-                covs_all.append(covs)
+                if args.symmetric:
+                    covs_all.extend(covs)
+                else:
+                    covs_all.append(covs)
         cls_all.append(cls_rot)
         bpws_all.append(bpws_rot)
             
@@ -243,4 +256,4 @@ if __name__ == "__main__":
     bpws_all = np.array(bpws_all)
     covs_all = np.array(covs_all)
     print("saving to", output_file)
-    np.savez(output_file, cls=cls_all, ell_eff=ell_eff, bpws=bpws_all, covs=covs_all)
+    np.savez(output_file, cls=cls_all, ell_eff=ell_eff, bpws=bpws_all, covs=covs_all, bpw_edges=bpw_edges)
