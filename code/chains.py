@@ -6,10 +6,11 @@ from getdist.gaussian_mixtures import GaussianND
 def get_latex_labels(param_names):
     """Get LaTex labels for cosmosis parameter names."""
     # cosmology
-    latex = dict(tau="\\tau", n_s="n_s", omega_m="\\Omega_m", omega_b="\\Omega_b", h0="h",
-                 ombh2="\\omega_b", ommh2="\\omega_m", omch2="\\omega_c",
+    latex = dict(omega_m="\\Omega_m", omega_b="\\Omega_b", omega_nu="\\Omega_\\nu", omega_k="\\Omega_k",
+                 ombh2="\\omega_b", ommh2="\\omega_m", omch2="\\omega_c", omnuh2="\\omega_\\nu",
+                 h0="h", hubble="H_0", cosmomc_theta="100\\theta_\\text{MC}", n_s="n_s", tau="\\tau",
                  a_s="A_s", log1e10as="\\ln \\left(10^{10} A_s\\right)", a_s_1e9="10^9 A_s",
-                 sigma_8="\\sigma_8", s_8="S_8", wa="w_a")
+                 sigma_8="\\sigma_8", s_8="S_8", wa="w_a", mnu="m_\\nu")
     # intrinsic alignment
     latex = latex | dict(a1="A_1", a2="A_2", alpha1="\\alpha_1", alpha2="\\alpha_2", bias_ta="b_\\text{ta}")
     # nusiance parameters
