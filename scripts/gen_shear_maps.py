@@ -65,9 +65,11 @@ def main():
 
         # weights map
         print("computing mask...")
-        w_map = make_healpix_map(nside, ipix=ipix, vals=cat["weight"])
+        # if using an extra mask, modify galaxy weights
+        weights = cat["weight"]
         if extra_mask is not None:
-            w_map *= extra_mask
+            weights *= extra_mask[ipix]
+        w_map = make_healpix_map(nside, ipix=ipix, vals=weights)
         hp.write_map(save_name_mask, w_map, overwrite=True)
         mask_b = w_map > 0
 
@@ -79,7 +81,7 @@ def main():
         # weighted shear maps
         if overwrite or not path.exists(save_name_maps): 
             print("computing shear maps...")
-            g_maps = [make_healpix_map(nside, ipix=ipix, vals=cat[f"g_{i}"] * cat["weight"]) for i in [1, 2]]
+            g_maps = [make_healpix_map(nside, ipix=ipix, vals=cat[f"g_{i}"] * weights) for i in [1, 2]]
             for g_map in g_maps:
                 g_map[mask_b] = g_map[mask_b] / w_map[mask_b]
             
@@ -89,7 +91,7 @@ def main():
         print("computing shot noise...")
         # Following Nicola et al 2020 (eqs 2.2 and 2.24)
         sigma2_e_cat = (cat["g_1"]**2 + cat["g_2"]**2) / 2
-        w2_sigma2_map = make_healpix_map(nside, ipix=ipix, vals=cat["weight"]**2 * sigma2_e_cat)
+        w2_sigma2_map = make_healpix_map(nside, ipix=ipix, vals=weights**2 * sigma2_e_cat)
         shot_noise = hp.nside2pixarea(nside) * np.mean(w2_sigma2_map)
         shot_noise_vals.append(shot_noise)
         print(f"Shot noise in auto pseudo-Cl: {shot_noise:.5e}")
@@ -97,7 +99,7 @@ def main():
         if args.do_psf:
             if overwrite or not path.exists(save_name_psf):
                 # psf elipticity maps
-                psf_maps = [make_healpix_map(nside, ipix=ipix, vals=cat[f"psf_e{i}"] * cat["weight"]) for i in [1, 2]]
+                psf_maps = [make_healpix_map(nside, ipix=ipix, vals=cat[f"psf_e{i}"] * weights) for i in [1, 2]]
                 for psf_map in psf_maps:
                     psf_map[mask_b] = psf_map[mask_b] / w_map[mask_b]
 
