@@ -193,7 +193,7 @@ def add_non_gauss_cov(s, theory, kind="ssc"):
     return s_new
 
 
-def marginalize_m(s, theory):
+def marginalize_m(s, theory, method="des"):
     """Correct for any multiplicative biases and marginalize over their uncertainty."""
     # sanity checks
     for tracer in s.tracers.keys():
@@ -215,7 +215,7 @@ def marginalize_m(s, theory):
                 cl /= (1 + m1) * (1 + m2)
                 s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
     # calculate new covariance
-    cov = s.covariance.covmat + calc_cov_margem(s, theory)
+    cov = s.covariance.covmat + calc_cov_margem(s, theory, method=method)
     s_new.add_covariance(cov)
     # add a metadata flag
     s_new.metadata["marginalized_over_m_bias"] = True
@@ -280,7 +280,7 @@ def main():
 
     # shear magnification bias marginalization
     if args.marg_shear_bias:
-        print("Marginalizing over shear multiplicative bias...")
+        print(f"Marginalizing over shear multiplicative bias ({args.marg_method} method)...")
         if theory is None and args.theory is not None:
             print("Loading tracer info from", args.theory)
             with open(args.theory) as f:
