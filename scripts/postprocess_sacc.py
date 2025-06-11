@@ -199,24 +199,10 @@ def marginalize_m(s, theory, method="des"):
     for tracer in s.tracers.keys():
         if tracer not in theory.tracers.keys():
             raise ValueError("Theory object does not have the same tracers as the sacc file.")
-    s_new = new_sacc_with_tracers(s)
-    # copy over Cls, correcting for multiplicative biases
-    # any Cl involving B-modes is copied over unchanged
-    for comb in s.get_tracer_combinations():
-        for dtype in s.get_data_types(comb):
-            ell, cl, inds = s.get_ell_cl(dtype, *comb, return_ind=True)
-            bpw = s.get_bandpower_windows(inds)
-            if 'b' in dtype:
-                s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
-            else:
-                tr1, tr2 = comb
-                m1 = theory.tracers[tr1]["args"].get("m_bias", 0)
-                m2 = theory.tracers[tr2]["args"].get("m_bias", 0)
-                cl /= (1 + m1) * (1 + m2)
-                s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
-    # calculate new covariance
+    # this simply modifies the covariance, does not de-bias Cls
+    s_new = s.copy()
     cov = s.covariance.covmat + calc_cov_margem(s, theory, method=method)
-    s_new.add_covariance(cov)
+    s_new.add_covariance(cov, overwrite=True)
     # add a metadata flag
     s_new.metadata["marginalized_over_m_bias"] = True
     return s_new
