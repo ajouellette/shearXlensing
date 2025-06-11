@@ -269,9 +269,7 @@ def main():
         print(f"Marginalizing over shear multiplicative bias ({args.marg_method} method)...")
         if theory is None and args.theory is not None:
             print("Loading tracer info from", args.theory)
-            with open(args.theory) as f:
-                config = yaml.safe_load(f)
-                theory = ccl_interface.CCLTheory(config)
+            theory = ccl_interface.CCLTheory.load_config(args.theory)
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = marginalize_m(s, theory, method=args.marg_method)
@@ -289,9 +287,7 @@ def main():
             print("Computing non-Gaussian covariance terms (SSC + cNG)...")
         if theory is None and args.theory is not None:
             print("Loading tracer info from", args.theory)
-            with open(args.theory) as f:
-                config = yaml.safe_load(f)
-                theory = ccl_interface.CCLTheory(config)
+            theory = ccl_interface.CCLTheory.load_config(args.theory)
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = add_non_gauss_cov(s, theory, kind=kind)
