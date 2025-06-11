@@ -154,6 +154,13 @@ class CCLHaloModel:
 
 class CCLTheory:
 
+    @classmethod
+    def load_config(cls, filename):
+        with open(filename) as f:
+            config = yaml.safe_load(f)
+        theory = cls(config)
+        return theory
+
     def __init__(self, config):
         self.config = config
         if "cosmo" in config.keys():
@@ -180,7 +187,10 @@ class CCLTheory:
         for trn, tracer in self.tracers.items():
             if tracer["type"] not in tracer_types.keys():
                 raise ValueError(f"unknown tracer type for {trn}")
-            ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
+            if tracer["type"] == "WeakLensing":
+                ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"], ia=self.ia_z)
+            else:
+                ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
             mask_file = tracer["args"].get("sky_mask", None)
             if mask_file is not None:
                 tracer["sky_mask"] = hp.read_map(mask_file).astype(bool)
@@ -196,6 +206,9 @@ class CCLTheory:
         if bpws is not None:
             cl = nx2pt.bin_theory_cl(cl, bpws)
         return cl
+
+    def get_cov_gaussian(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, knox=False):
+        pass
 
     def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, method="des"):
         """Compute the extra covariance term due to analytically marginalizing over multiplicative bias."""
@@ -220,7 +233,9 @@ class CCLTheory:
                            sigma_m2a**2 * (tracer2a == tracer1b) + sigma_m2a**2 * (tracer2a == tracer2b)
         else:
             raise ValueError("method must be either 'kids' or 'des'")
-        return prior_factor * cov
+        #print("prior factor:", prior_factor)
+        cov *= prior_factor
+        return cov
 
     def get_fsky(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None):
         if tracer2a is None: tracer2a = tracer1a
