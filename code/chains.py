@@ -17,7 +17,8 @@ def get_latex_labels(param_names):
     latex = latex | {f"m{i}": f"m_{i}" for i in range(10)}
     latex = latex | {f"bias_{i}": f"\\Delta z_{i}" for i in range(10)}
     # miscellaneous
-    latex = latex | dict(a_lens="A_\\text{lens}", a_mod="A_\\text{mod}", logt_agn="\\log T_\\text{AGN}")
+    latex = latex | dict(a_lens="A_\\text{lens}", a_mod="A_\\text{mod}", logt_agn="\\log T_\\text{AGN}",
+                         a_planck="A_\\text{planck}")
     
     if isinstance(param_names, str):
         return latex.get(param_names, param_names)
