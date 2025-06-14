@@ -1,0 +1,28 @@
+#!include binning.yaml
+nside: 2048
+binning: *ck_cross
+workspace_dir: "/scratch/aaronjo2/scratch/nmt_workspaces"
+
+tracer_list:
+#!include tracers-agora.yaml
+
+tracers:
+  wl:
+    <<: *wl_agora_rot01
+    noise_est: [1.46659e-5, 1.38454e-5, 9.17914e-6, 6.09880e-6]  # 2048
+
+  ck:
+    <<: *ck_agora_pol_rot01
+
+cross_spectra:
+  list:
+    - tracers: [wl, wl]
+      binning: *wl_highell
+      subtract_noise: True
+    - tracers: [wl, ck]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    metadata:
+      description: "simulated DES-Y3 x SPT-3G pol-only lensing shear power spectra"
+    file: "data/cross_cls/simulated_desy3_spt3g_pol_2x2_nside{nside}.fits"

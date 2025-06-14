@@ -1,0 +1,97 @@
+# List of Agora simulated tracers
+- &wl_agora_rot01
+  name: "simulated DES-Y3 shear maps (Agora 1)"
+  bins: 4
+  bins_one_indexed: True  # simulations are labeled zbin1 - zbin4
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/fiducial"
+  beam: pixwin
+  healpix:
+    map: "desy3_zbin{bin}_rot01_nside{nside}_shearmaps.fits"
+    mask: "desy3_zbin{bin}_rot01_nside{nside}_mask.fits"
+
+- &wl_agora_rot02
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 shear maps (Agora 2)"
+  healpix:
+    map: "desy3_zbin{bin}_rot02_nside{nside}_shearmaps.fits"
+    mask: "desy3_zbin{bin}_rot02_nside{nside}_mask.fits"
+
+- &wl_agora_rot03
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 shear maps (Agora 3)"
+  healpix:
+    map: "desy3_zbin{bin}_rot03_nside{nside}_shearmaps.fits"
+    mask: "desy3_zbin{bin}_rot03_nside{nside}_mask.fits"
+
+- &wl_agora_rot04
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 shear maps (Agora 4)"
+  healpix:
+    map: "desy3_zbin{bin}_rot04_nside{nside}_shearmaps.fits"
+    mask: "desy3_zbin{bin}_rot04_nside{nside}_mask.fits"
+
+- &ck_agora_mv_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/cmbkappa/mockobs/"
+  healpix:
+    map: "kmapxx_kGMV_5001_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+  use_mask_squared: True
+
+- &ck_agora_mv_rot02
+  <<: *ck_agora_mv_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 2)"
+  healpix:
+    map: "kmapxx_kGMV_5002_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+  
+- &ck_agora_mv_rot03
+  <<: *ck_agora_mv_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 3)"
+  healpix:
+    map: "kmapxx_kGMV_5003_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+
+- &ck_agora_mv_rot04
+  <<: *ck_agora_mv_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 4)"
+  healpix:
+    map: "kmapxx_kGMV_5004_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+
+- &ck_agora_pol_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/cmbkappa/mockobs/"
+  healpix:
+    map: "kmapxx_kPP_5001_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+  use_mask_squared: True
+
+- &ck_agora_pol_rot02
+  <<: *ck_agora_pol_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 2)"
+  healpix:
+    map: "kmapxx_kPP_5002_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+  
+- &ck_agora_pol_rot03
+  <<: *ck_agora_pol_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 3)"
+  healpix:
+    map: "kmapxx_kPP_5003_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True
+
+- &ck_agora_pol_rot04
+  <<: *ck_agora_pol_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 4)"
+  healpix:
+    map: "kmapxx_kPP_5004_1.fits"
+    mask: "mask2048_binary_inner_smoothmask_apod_v2.fits"
+    is_masked: True

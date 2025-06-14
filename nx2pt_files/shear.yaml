@@ -1,0 +1,24 @@
+#!include binning.yaml
+nside: 2048
+binning: *wl_highell
+workspace_dir: "/scratch/aaronjo2/scratch/nmt_workspaces"
+
+tracer_list:
+#!include tracers.yaml
+
+tracers:
+  wl:
+    <<: *wl_desy3
+    #noise_est: [2.346129e-4, 2.213803e-4, 1.466034e-4, 9.738680e-5]  # 1024
+    noise_est: [1.46633e-05, 1.38363e-05, 9.16271e-06, 6.08668e-06]  # 2048
+
+cross_spectra:
+  list:
+    - tracers: [wl, wl]
+      subtract_noise: True
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    metadata:
+      description: "DES-Y3 shear power spectra"
+    file: "data/cross_cls/desy3_shear_nside{nside}_highell.fits"
