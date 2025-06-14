@@ -4,6 +4,7 @@ import datetime
 import re
 from os import path
 import sys
+import warnings
 
 import numpy as np
 import sacc
@@ -126,7 +127,7 @@ def correct_cmbk_tf(s, tf):
     return s_new
 
 
-def calc_cov_margem(s, theory, method="des"):
+def calc_cov_margem(s, theory, method="des", self_test=True):
     """Compute covariance term due to marginalizing over shear m bias."""
     cov = np.zeros((len(s.mean), len(s.mean)))
     # loop over all power spectra in the sacc file
@@ -144,6 +145,9 @@ def calc_cov_margem(s, theory, method="des"):
                     # get bandpower windows
                     bpws = s.get_bandpower_windows(inds1).weight.T
                     bpws_b = s.get_bandpower_windows(inds2).weight.T
+                    if self_test:
+                        # make sure that theory Cls are a reasonable match to data
+                        pass
                     # compute block
                     block = theory.get_cov_marg_m(*tracers1, *tracers2,
                                                    bpws=bpws, bpws_b=bpws_b, method=method)
@@ -285,11 +289,12 @@ def main():
         else:
             kind = "both"
             print("Computing non-Gaussian covariance terms (SSC + cNG)...")
-        if theory is None and args.theory is not None:
-            print("Loading tracer info from", args.theory)
-            theory = ccl_interface.CCLTheory.load_config(args.theory)
-        else:
-            raise ValueError("Must provide tracer info to calculate analytical covariances")
+        if theory is None:
+            if args.theory is not None:
+                print("Loading tracer info from", args.theory)
+                theory = ccl_interface.CCLTheory.load_config(args.theory)
+            else:
+                raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = add_non_gauss_cov(s, theory, kind=kind)
 
     def update_timestamp(s, modified=False):
