@@ -1,7 +1,7 @@
 #!include binning.yaml
 nside: 2048
 binning: *ck_cross
-workspace_dir: "/scratch/aaronjo2/scratch/nmt_workspaces"
+workspace_dir: "/scratch/aaronjo2/nmt_workspaces"
 
 tracer_list:
 #!include tracers-agora.yaml
