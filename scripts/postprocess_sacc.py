@@ -118,6 +118,7 @@ def correct_cmbk_tf(s, tf):
                 s_new.add_ell_cl(dtype, *comb, ell, cl_corr, window=bpw)
                 std_corr = np.abs(cl_corr) * np.sqrt((stds_old[inds] / cl)**2 + (tf["tf_err"] / tf["tf"])**2)
                 stds_new.append(std_corr)
+    s_new.to_canonical_order()
     # rescale covariance
     stds_new = np.hstack(stds_new)
     cov_new = s.covariance.covmat * np.outer(stds_new, stds_new) / np.outer(stds_old, stds_old)
