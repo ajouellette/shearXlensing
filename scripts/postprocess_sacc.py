@@ -97,7 +97,7 @@ def correct_cmbk_tf(s, tf):
     s_new = new_sacc_with_tracers(s)
     # keep track of standard deviations in order to rescale covariance matrix
     stds_old = np.sqrt(np.diag(s.covariance.covmat))
-    stds_new = []
+    stds_new = stds_old.copy()
     for comb in s.get_tracer_combinations():
         for dtype in s.get_data_types(comb):
             ell, cl, inds = s.get_ell_cl(dtype, *comb, return_ind=True)
@@ -105,7 +105,7 @@ def correct_cmbk_tf(s, tf):
             # spectra that do not involve CMB lensing or involve B-modes do not get modified
             if 'b' in dtype or "ck_0" not in comb:
                 s_new.add_ell_cl(dtype, *comb, ell, cl, window=bpw)
-                stds_new.append(stds_old[inds])
+                #stds_new[inds] = stds_old[inds]
             else:
                 # can't do a CMB lensing auto
                 if comb[0] == comb[1]:
@@ -117,10 +117,9 @@ def correct_cmbk_tf(s, tf):
                 cl_corr = cl / tf["tf"]
                 s_new.add_ell_cl(dtype, *comb, ell, cl_corr, window=bpw)
                 std_corr = np.abs(cl_corr) * np.sqrt((stds_old[inds] / cl)**2 + (tf["tf_err"] / tf["tf"])**2)
-                stds_new.append(std_corr)
+                stds_new[inds] = stds_old[inds]
     s_new.to_canonical_order()
     # rescale covariance
-    stds_new = np.hstack(stds_new)
     cov_new = s.covariance.covmat * np.outer(stds_new, stds_new) / np.outer(stds_old, stds_old)
     s_new.add_covariance(cov_new)
     # add a metadata flag
