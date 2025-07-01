@@ -13,9 +13,15 @@ binning2: &wl_highell
               1096., 1265., 1461., 1687., 1948., 2250., 2598., 3000., 3464.,
               4000.]
 
-binning3: &ck_cross
-  # 24 linear bins for use in cross-corrs with CMB lensing
+# binning for CMB lensing x-corrs
+binning3: &lin_30_3500
   kind: linear
+  ell_min: 30
+  ell_max: 3500
+  nbpws: 24
+
+binning4: &log_30_3500
+  kind: log
   ell_min: 30
   ell_max: 3500
   nbpws: 24
