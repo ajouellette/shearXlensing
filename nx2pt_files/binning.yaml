@@ -25,3 +25,9 @@ binning4: &log_30_3500
   ell_min: 30
   ell_max: 3500
   nbpws: 24
+
+binning5: &ck_cross
+# 6 linear bins between 30 and 246 and 18 log bins between 246 and 3500
+bpw_edges: [  30,   66,  102,  138,  174,  210,  246,  285,  330,  382,  443,
+             514,  596,  690,  800,  927, 1075, 1246, 1444, 1673, 1940, 2248,
+             2605, 3019, 3500]
