@@ -1,6 +1,16 @@
 import numpy as np
 from scipy import stats, interpolate
 import pyccl as ccl
+import nx2pt
+
+
+def cum_chi2(datavec, cov):
+    chi2s = np.zeros(len(datavec) - 1)
+    for i in range(len(chi2s)):
+        d = datavec[:i+1]
+        c = cov[:i+1][:,:i+1]
+        chi2s[i] = d @ np.linalg.solve(c, d)
+    return chi2s
 
 
 def get_kmax_ell_cut(cosmo, tracer1, tracer2, kmax, thresh=0.95, smooth_lk=5e-2):
@@ -17,6 +27,25 @@ def get_kmax_ell_cut(cosmo, tracer1, tracer2, kmax, thresh=0.95, smooth_lk=5e-2)
     # interpolate ratio to find ell cut
     ell_cut = interpolate.interp1d(ratio, ell)(thresh)
     return ell_cut
+
+
+def get_kmax_ell_cut_chi2(cosmo, tracer1, tracer2, kmax, bpws, cov, thresh=1, smooth_lk=5e-2):
+    """ """
+    pk = cosmo.parse_pk(p_of_k_a="nonlinear")
+    # apply k-cut to power spectrum
+    pk_cut = ccl.Pk2D.from_function(lambda k, a: pk(k, a) * stats.logistic.sf(np.log(k / kmax) / smooth_lk), is_logp=False)
+    # calculate cls and make data vectors
+    ell = np.hstack([np.linspace(2, 102, 50), np.geomspace(104, 1e4, 150)])
+    cl = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk)
+    cl = nx2pt.bin_theory_cl(cl, bpws, ell=ell)
+    cl_cut = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk_cut)
+    cl_cut = nx2pt.bin_theory_cl(cl_cut, bpws, ell=ell)
+    # get cut based on chi2 distance
+    chi2 = cum_chi2(cl - cl_cut, cov)
+    ind_cut = np.nonzero(chi2 > thresh)[0]
+    if len(ind_cut) == 0:
+        return -1
+    return ind_cut[0]
 
 
 def get_kmax_theta_cut(cosmo, tracer1, tracer2, kmax, thresh=0.95, smooth_lk=5e-2):
