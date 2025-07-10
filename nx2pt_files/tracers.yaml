@@ -1,8 +1,10 @@
+# List of data tracers
+
 ## Weak lensing
 - &wl_desy3
   name: "DES-Y3 shear maps"
   bins: 4
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/maps"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/des_y3/maps"
   beam: pixwin
   healpix:
     map: "DESY3_zbin{bin}_nside{nside}_shearmaps.fits"
@@ -12,7 +14,7 @@
 - &wl_desy3_cat
   name: "DES-Y3 shear catalogs"
   bins: 4
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/des_y3/calibrated_catalogs"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/des_y3/calibrated_catalogs"
   catalog:
     file: "DESY3_shearcat_zbin{bin}.fits"
     fields: ["g_1", "g_2"]
@@ -40,27 +42,47 @@
     fields: ["g_1", "g_2"]
   correct_qu_sign: True
 
+
 ## CMB lensing
 - &ck_spt3g_mv
-  name: "SPT-3G CMB convergence (MV)"
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
+  name: "SPT-3G CMB convergence (GMV)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
   healpix:
-    map: "kmapxx_0_mfhalf1_{nside}.fits"
-    mask: "mask{nside}_border_apod_mask.fits"
-  # square mask for CMB lensing field
-  use_mask_squared: True
+    map: "kmapxx_kGMV_nside2048_0_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
 
 - &ck_spt3g_pol
   name: "SPT-3G CMB convergence (pol-only)"
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/spt"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
   healpix:
-    map: "kmapxx_kPP_0_mfhalf1_{nside}.fits"
-    mask: "mask{nside}_border_apod_mask.fits"
-  use_mask_squared: True
+    map: "kmapxx_kqPP_nside2048_0_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_spt3g_mv_prfhd
+  name: "SPT-3G CMB convergence (GMV profile hardened)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
+  healpix:
+    map: "kmapxx_kGMVbhTTprf_0_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
 
 - &ck_actdr6_mv
   name: "ACT-DR6 CMB convergence (MV)"
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/act_dr6_lensing/maps/baseline"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/act_dr6_lensing/maps/baseline"
   healpix:
     map: "kappa_map_nside{nside}.fits"
     mask: "kappa_mask_nside{nside}.fits"
@@ -68,11 +90,12 @@
 
 - &ck_actdr6_pol
   name: "ACT-DR6 pol-only CMB convergence (pol-only)"
-  data_dir: "/projects/caps/aaronjo2/shearXlensing/data/act_dr6_lensing/maps/polonly"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/act_dr6_lensing/maps/polonly"
   healpix:
     map: "kappa_map_nside{nside}.fits"
     mask: "kappa_mask_nside{nside}.fits"
   use_mask_squared: True
+
 
 ## Galaxy density
 - &gal_desy3_maglim
