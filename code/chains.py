@@ -26,7 +26,7 @@ def get_latex_labels(param_names):
     return map(lambda p: latex.get(p, p), param_names)
 
 
-def load_cosmosis_chain(fname, label=None):
+def load_cosmosis_chain(fname, label=None, quiet=False):
     """Load a cosmosis chain from a file."""
     # read the header
     header = []
@@ -48,7 +48,8 @@ def load_cosmosis_chain(fname, label=None):
     sampler = header.pop(0).split('=')[1].strip()
     if sampler not in samplers.keys():
         raise NotImplementedError(f"unknown sampler {sampler}")
-    print("sampler:", sampler)
+    if not quiet:
+        print("sampler:", sampler)
 
     data = np.atleast_2d(np.loadtxt(fname, comments='#'))
     remove_inds = []
@@ -65,7 +66,7 @@ def load_cosmosis_chain(fname, label=None):
     params = [p for i, p in enumerate(params) if i not in remove_inds]
 
     chain = samplers[sampler](params, data, header=header, label=label)
-    if isinstance(chain, getdist.MCSamples):
+    if isinstance(chain, getdist.MCSamples) and not quiet:
         print(chain.getNumSampleSummaryText())
 
     # try to add derived parameters
