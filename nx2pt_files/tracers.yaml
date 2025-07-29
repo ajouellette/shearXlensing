@@ -4,7 +4,7 @@
 - &wl_desy3
   name: "DES-Y3 shear maps"
   bins: 4
-  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/des_y3/maps"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/des_y3/maps_updated"
   beam: pixwin
   healpix:
     map: "DESY3_zbin{bin}_nside{nside}_shearmaps.fits"
