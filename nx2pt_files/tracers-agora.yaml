@@ -57,6 +57,58 @@
   name: "simulated DES-Y3 shear maps (Agora 10)"
   data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/fiducial/rot10"
 
+## Mock DES lensing fields without shape noise
+##############################################
+- &wl_agora_no_noise_rot01
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot01"
+
+- &wl_agora_no_noise_rot02
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 2)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot02"
+
+- &wl_agora_no_noise_rot03
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 3)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot03"
+
+- &wl_agora_no_noise_rot04
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 4)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot04"
+
+- &wl_agora_no_noise_rot05
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 5)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot05"
+
+- &wl_agora_no_noise_rot06
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 6)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot06"
+
+- &wl_agora_no_noise_rot07
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 7)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot07"
+
+- &wl_agora_no_noise_rot08
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 8)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot08"
+
+- &wl_agora_no_noise_rot09
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 9)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot09"
+
+- &wl_agora_no_noise_rot10
+  <<: *wl_agora_rot01
+  name: "simulated DES-Y3 noiseless shear maps (Agora 10)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/sims/shear/mock_maps/less_noise/rot10"
+
 
 ## CMB lensing fields
 #####################
