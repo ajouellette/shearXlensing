@@ -1,0 +1,196 @@
+#!include binning.yaml
+nside: 2048
+#binning: *log_30_3500
+binning: *ck_cross
+workspace_dir: "/scratch/aaronjo2/nmt_workspaces"
+
+tracer_list:
+#!include tracers-agora.yaml
+
+tracers:
+  # Agora patches 1 through 10
+  wl1: *wl_agora_no_noise_rot01
+  ck1: *ck_agora_pol_rot01
+  ck1_mv: *ck_agora_mv_rot01
+
+  wl2: *wl_agora_no_noise_rot02
+  ck2: *ck_agora_pol_rot02
+  ck2_mv: *ck_agora_mv_rot02
+
+  wl3: *wl_agora_no_noise_rot03
+  ck3: *ck_agora_pol_rot03
+  ck3_mv: *ck_agora_mv_rot03
+
+  wl4: *wl_agora_no_noise_rot04
+  ck4: *ck_agora_pol_rot04
+  ck4_mv: *ck_agora_mv_rot04
+
+  wl5: *wl_agora_no_noise_rot05
+  ck5: *ck_agora_pol_rot05
+  ck5_mv: *ck_agora_mv_rot05
+
+  wl6: *wl_agora_no_noise_rot06
+  ck6: *ck_agora_pol_rot06
+  ck6_mv: *ck_agora_mv_rot06
+
+  wl7: *wl_agora_no_noise_rot07
+  ck7: *ck_agora_pol_rot07
+  ck7_mv: *ck_agora_mv_rot07
+
+  wl8: *wl_agora_no_noise_rot08
+  ck8: *ck_agora_pol_rot08
+  ck8_mv: *ck_agora_mv_rot08
+
+  wl9: *wl_agora_no_noise_rot09
+  ck9: *ck_agora_pol_rot09
+  ck9_mv: *ck_agora_mv_rot09
+
+  wl10: *wl_agora_no_noise_rot10
+  ck10: *ck_agora_pol_rot10
+  ck10_mv: *ck_agora_mv_rot10
+
+
+# Cross-spectra for patches 1 - 10
+cross_spectra1: &cs1
+  list:
+    - tracers: [wl1, ck1]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    metadata:
+      description: "simulated DES-Y3 x SPT-3G lensing power spectra"
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot01_lmax3500_log_noiseless.fits"
+
+cross_spectra1_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl1, ck1_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot01_lmax3500_log_noiseless.fits"
+
+cross_spectra2:
+  <<: *cs1
+  list:
+    - tracers: [wl2, ck2]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot02_lmax3500_log_noiseless.fits"
+
+cross_spectra2_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl2, ck2_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot02_lmax3500_log_noiseless.fits"
+
+cross_spectra3:
+  <<: *cs1
+  list:
+    - tracers: [wl3, ck3]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot03_lmax3500_log_noiseless.fits"
+
+cross_spectra3_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl3, ck3_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot03_lmax3500_log_noiseless.fits"
+
+cross_spectra4:
+  <<: *cs1
+  list:
+    - tracers: [wl4, ck4]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot04_lmax3500_log_noiseless.fits"
+
+cross_spectra4_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl4, ck4_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot04_lmax3500_log_noiseless.fits"
+
+cross_spectra5:
+  <<: *cs1
+  list:
+    - tracers: [wl5, ck5]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot05_lmax3500_log_noiseless.fits"
+
+cross_spectra5_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl5, ck5_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot05_lmax3500_log_noiseless.fits"
+
+cross_spectra6:
+  <<: *cs1
+  list:
+    - tracers: [wl6, ck6]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot06_lmax3500_log_noiseless.fits"
+
+cross_spectra6_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl6, ck6_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot06_lmax3500_log_noiseless.fits"
+
+cross_spectra7:
+  <<: *cs1
+  list:
+    - tracers: [wl7, ck7]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot07_lmax3500_log_noiseless.fits"
+
+cross_spectra7_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl7, ck7_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot07_lmax3500_log_noiseless.fits"
+
+cross_spectra8:
+  <<: *cs1
+  list:
+    - tracers: [wl8, ck8]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot08_lmax3500_log_noiseless.fits"
+
+cross_spectra8_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl8, ck8_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot08_lmax3500_log_noiseless.fits"
+
+cross_spectra9:
+  <<: *cs1
+  list:
+    - tracers: [wl9, ck9]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot09_lmax3500_log_noiseless.fits"
+
+cross_spectra9_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl9, ck9_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot09_lmax3500_log_noiseless.fits"
+
+cross_spectra10:
+  <<: *cs1
+  list:
+    - tracers: [wl10, ck10]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_pol_nside{nside}_rot10_lmax3500_log_noiseless.fits"
+
+cross_spectra10_mv:
+  <<: *cs1
+  list:
+    - tracers: [wl10, ck10_mv]
+  save_sacc:
+    file: "data/cross_cls/agora/simulated_desy3_spt3g_mv_nside{nside}_rot10_lmax3500_log_noiseless.fits"
+
