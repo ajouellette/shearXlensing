@@ -7,14 +7,15 @@ Conda packages are listed in [`environment.yml`](environment.yml)
 
 ## Data
 - DES Y3 cosmic shear: [catalogs](https://des.ncsa.illinois.edu/releases/y3a2/Y3key-catalogs), [products](https://des.ncsa.illinois.edu/releases/y3a2/Y3key-products)
+-- DES Y3 blue shear sample: [source selection and real space analysis](https://jamiemccullough.github.io/data/blueshear/)
 - SPT 3G CMB lensing maps
 
 ## Measurement
 Harmonic space using NaMaster
 
 ## Simulations
-Validation using Agora
+Validation using [Agora](https://yomori.github.io/agora/index.html)
 
 ## Analysis
-Parameter inference with CosmoSIS/polychord
+Parameter inference with CosmoSIS/[nautilus](https://nautilus-sampler.readthedocs.io/en/latest/)
 
