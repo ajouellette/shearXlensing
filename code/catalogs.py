@@ -1,6 +1,8 @@
+import pickle
 import numpy as np
 import h5py
 import fitsio
+import healpy as hp
 from astropy import table
 import joblib
 
@@ -75,10 +77,15 @@ class DESY3ShearCat:
                 inds = inds[bin_mask]
             # color selections
             if sample != "all":
-                rz_color = -2.5 * np.log10(index[f"catalog/metacal/{cat_name}"]["flux_r"][:][inds] /
-                                           index[f"catalog/metacal/{cat_name}"]["flux_z"][:][inds])
-                rz_cuts = [0.5, 0.75, 0.95, 1.3]  # From Table 1 of McCullough et al 2024
-                blue_select = rz_color < rz_cuts[zbin-1]
+                cell_inds = index[f"catalog/sompz/{cat_name}/cell_wide"][:][inds]
+                with open("/projects/ncsa/caps/aaronjo2/shearXlensing/data/des_y3/blue_shear/tomo_bins_wide_modal_even_blue.pkl", 'rb') as f:
+                    bins = pickle.load(f, encoding="latin1")
+                blue_select = np.isin(cell_inds, bins[zbin - 1])
+                #rz_color = -2.5 * np.log10(index[f"catalog/metacal/{cat_name}"]["flux_r"][:][inds] /
+                #                           index[f"catalog/metacal/{cat_name}"]["flux_z"][:][inds])
+                #rz_cuts = [0.5, 0.75, 0.95, 1.3]  # From Table 1 of McCullough et al 2024
+                #rz_cuts = [0.495, 0.752, 0.946, 1.339]  # modified cuts designed to match galaxy numbers
+                #blue_select = rz_color < rz_cuts[zbin-1]
                 if sample == "blue":
                     inds = inds[blue_select]
                 else:
@@ -164,3 +171,63 @@ class DESY3ShearCat:
         ngal = np.array([datavecs["nz_source"].read_header()[f"NGAL_{i}"] for i in range(1,5)])
         dndz_total = np.sum([ngal[i] * dndzs[i] for i in range(4)], axis=0) / np.sum(ngal)
         return z, dndz_total
+
+
+class DESY3MaglimCat:
+
+    def __init__(self, index_file, bin_edges=[0.2, 0.4, 0.55, 0.7, 0.85, 0.95, 1.05]):
+        self.index_file = index_file
+        self.bin_edges = bin_edges
+        with h5py.File(index_file) as f:
+            self.base_select = f["index/maglim/select"][:]
+            self.rand_select = f["index/maglim/random_select"][:]
+            self.photoz = f["catalog/dnf/unsheared/zmean_sof"][:][self.base_select]
+            self.randz = f["randoms/maglim/z"][:][self.rand_select]
+
+    def get_zbin(self, zbin):
+        if hasattr(self, f"cat_zbin{zbin}"):
+            return getattr(self, f"cat_zbin{zbin}")
+
+        if zbin > len(self.bin_edges) - 2:
+            raise ValueError(f"catalog only has {len(self.bin_edges)} z-bins")
+        bin_select = np.nonzero((self.photoz > self.bin_edges[zbin]) * (self.photoz < self.bin_edges[zbin+1]))[0]
+        with h5py.File(self.index_file) as f:
+            ra = f["catalog/maglim/ra"][:][self.base_select][bin_select]
+            dec = f["catalog/maglim/dec"][:][self.base_select][bin_select]
+            weight = f["catalog/maglim/weight"][:][self.base_select][bin_select]
+        data = table.Table(data=dict(ra=ra, dec=dec, weight=weight))
+        setattr(self, f"cat_zbin{zbin}", data)
+        return data
+
+    def get_randoms_zbin(self, zbin):
+        if hasattr(self, f"randoms_cat_zbin{zbin}"):
+            return getattr(self, f"randoms_cat_zbin{zbin}")
+
+        if zbin > len(self.bin_edges) - 2:
+            raise ValueError(f"catalog only has {len(self.bin_edges)} z-bins")
+        bin_select = np.nonzero((self.randz > self.bin_edges[zbin]) * (self.randz < self.bin_edges[zbin+1]))[0]
+        with h5py.File(self.index_file) as f:
+            ra = f["randoms/maglim/ra"][:][self.rand_select][bin_select]
+            dec = f["randoms/maglim/dec"][:][self.rand_select][bin_select]
+        data = table.Table(data=dict(ra=ra, dec=dec))
+        setattr(self, f"randoms_cat_zbin{zbin}", data)
+        return data
+
+    def get_map(self, nside, zbin, mask_thresh=0):
+        npix = hp.nside2npix(nside)
+        catalog = self.get_zbin(zbin)
+        randoms = self.get_randoms_zbin(zbin)
+        pixinds = hp.ang2pix(nside, catalog["ra"], catalog["dec"], lonlat=True)
+        pixinds_rand = hp.ang2pix(nside, randoms["ra"], randoms["dec"], lonlat=True)
+        # calculate mask based on randoms
+        mask = np.bincount(pixinds_rand, minlength=npix).astype(float)
+        mask /= np.max(mask)
+        mask_b = mask > mask_thresh
+        # calculate weighted overdensity and shot noise estimate
+        w_map = np.bincount(pixinds, weights=catalog["weight"], minlength=npix)
+        nmean = np.sum(w_map * mask_b) / np.sum(mask * mask_b)
+        shot_noise = hp.nside2pixarea(nside) / nmean * np.mean(mask * mask_b)
+        delta = np.zeros(npix)
+        delta[mask_b] = w_map[mask_b] / mask[mask_b] / nmean - 1
+        result = dict(shot_noise=shot_noise, delta=delta, mask=mask*mask_b)
+        return result
