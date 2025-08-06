@@ -1,4 +1,6 @@
 import numpy as np
+import h5py
+from nautilus.bounds import NautilusBound
 import getdist
 from getdist.gaussian_mixtures import GaussianND
 
@@ -158,3 +160,37 @@ samplers = {
         "fisher": load_fisher,
         "maxlike": load_maxlike
     }
+
+
+def shell_bound_occupation(nautilus_file, fractional=True):
+    """Determine how many points of each shell are also part of each bound.
+    Parameters
+    ----------
+    fractional : bool, optional
+        Whether to return the absolute or fractional dependence. Default
+        is True.
+    Returns
+    -------
+    m : numpy.ndarray
+        Two-dimensional array with occupation numbers. The element at index
+        :math:`(i, j)` corresponds to the occupation of points in shell
+        shell :math:`i` that also belong to bound :math:`j`. If
+        `fractional` is True, this is the fraction of all points in shell
+        :math:`i` and otherwise it is the absolute number.
+    """
+    bounds = []
+    points = []
+    with h5py.File(nautilus_file) as s:
+        i = 1
+        while f"bound_{i}" in s.keys():
+            bounds.append(NautilusBound.read(s[f"bound_{i}"]))
+            points.append(s[f"sampler/points_{i}"][:])
+            i += 1
+
+    m = np.zeros((len(bounds), len(bounds)), dtype=int)
+    for i, pnts in enumerate(points):
+        for k, bound in enumerate(bounds):
+            m[i, k] = np.sum(bound.contains(pnts))
+    if fractional:
+        m = m / np.diag(m)[:, np.newaxis]
+    return m
