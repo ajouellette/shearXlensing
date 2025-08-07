@@ -5,10 +5,11 @@ cosmo:
     A_s: 2.105e-9
     n_s: 0.967
     h: 0.6766
+    m_nu: 0.06
     matter_power_spectrum: camb
     extra_parameters:
         camb:
-            halofit_versoion: mead2020_feedback
+            halofit_version: mead2020_feedback
             HMCode_logT_AGN: 7.8
 
 # no IA for blue sample
@@ -35,7 +36,7 @@ tracers:
               delta_z: 0
           m_bias: -0.0129
           sigma_m: 0.0091
-          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue/DESY3_zbin0_nside2048_mask.fits
+          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue_updated/DESY3_zbin0_nside2048_mask.fits
 
     wl_1:
       type: WeakLensing
@@ -46,7 +47,7 @@ tracers:
               delta_z: 0
           m_bias: -0.0180
           sigma_m: 0.0078
-          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue/DESY3_zbin1_nside2048_mask.fits
+          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue_updated/DESY3_zbin1_nside2048_mask.fits
 
     wl_2:
       type: WeakLensing
@@ -57,7 +58,7 @@ tracers:
               delta_z: 0
           m_bias: -0.0203
           sigma_m: 0.0076
-          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue/DESY3_zbin2_nside2048_mask.fits
+          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue_updated/DESY3_zbin2_nside2048_mask.fits
 
     wl_3:
       type: WeakLensing
@@ -68,4 +69,4 @@ tracers:
               delta_z: 0
           m_bias: -0.0356
           sigma_m: 0.0076
-          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue/DESY3_zbin3_nside2048_mask.fits
+          sky_mask: /u/aaronjo2/caps/shearXlensing/data/des_y3/blue_shear/maps/blue_updated/DESY3_zbin3_nside2048_mask.fits
