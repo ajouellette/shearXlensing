@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 #SBATCH --account=caps
-#SBATCH --time=8:00:00
+#SBATCH --time=3:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=32
-#SBATCH --mem=300G
-#SBATCH --job-name=2pt-pipeline
+#SBATCH --ntasks-per-node=64
+#SBATCH --hint=compute_bound
+#SBATCH --job-name=shear-2pt
 #SBATCH --partition=caps
 #SBATCH --output=logs/%x-%j.out
 #SBATCH --error=logs/%x-%j.err
@@ -27,5 +27,5 @@ hostname
 echo threads: $OMP_NUM_THREADS
 
 date
-time run_nx2pt $@
+time python scripts/calc_shear_realspace.py $@
 date

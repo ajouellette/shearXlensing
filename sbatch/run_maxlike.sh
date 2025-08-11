@@ -3,7 +3,7 @@
 #SBATCH --account=caps
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=8
+#SBATCH --ntasks=16
 #SBATCH --job-name=cosmosis-maxlike
 #SBATCH --partition=caps
 #SBATCH --output=logs/%x-%j.out
