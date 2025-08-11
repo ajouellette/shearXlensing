@@ -9,7 +9,7 @@ cosmo:
     matter_power_spectrum: camb
     extra_parameters:
         camb:
-            halofit_versoion: mead2020
+            halofit_version: mead2020
 
 ia:
     kind: nla-z
