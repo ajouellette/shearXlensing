@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 import h5py
 from nautilus.bounds import NautilusBound
@@ -85,7 +86,7 @@ def load_cosmosis_chain(fname, label=None, quiet=False):
     return chain
 
 
-def load_nested(params, data, header=None, label=None):
+def load_samples(params, data, header=None, label=None, sampler="mcmc"):
     # find weights column
     ind = -1
     for key in ["weight", "log_weight"]:
@@ -97,7 +98,8 @@ def load_nested(params, data, header=None, label=None):
         weights = data[:,ind] if 'log' not in key else np.exp(data[:,ind])
         data = np.delete(data, ind, axis=1)
     else:
-        print("warning: did not find sample weights, using equal weights")
+        if sampler != "mcmc":
+            print("warning: did not find sample weights, using equal weights")
         weights = np.ones(len(data))
 
     if header is not None:
@@ -131,7 +133,7 @@ def load_nested(params, data, header=None, label=None):
     samples = getdist.MCSamples(samples=data, weights=weights, ranges=ranges,
                                 names=varied_params + derived_params,
                                 labels=get_latex_labels(params),
-                                label=label, sampler="nested")
+                                label=label, sampler=sampler)
     return samples
 
 
@@ -155,8 +157,9 @@ def load_maxlike(params, data, header=None, label=None):
 
 
 samplers = {
-        "nautilus": load_nested,
-        "polychord": load_nested,
+        "emcee": load_samples,
+        "nautilus": partial(load_samples, sampler="nested"),
+        "polychord": partial(load_samples, sampler="nested"),
         "fisher": load_fisher,
         "maxlike": load_maxlike
     }
