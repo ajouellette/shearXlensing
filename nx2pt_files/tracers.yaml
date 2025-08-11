@@ -48,7 +48,7 @@
   name: "SPT-3G CMB convergence (GMV)"
   data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
   healpix:
-    map: "kmapxx_kGMV_nside2048_0_1.fits"
+    map: "kmapxx_kGMV_0_1.fits"
     mask_border:
       file: border_mask2048.fits
       power: 3
@@ -60,7 +60,7 @@
   name: "SPT-3G CMB convergence (pol-only)"
   data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
   healpix:
-    map: "kmapxx_kqPP_nside2048_0_1.fits"
+    map: "kmapxx_kqPP_0_1.fits"
     mask_border:
       file: border_mask2048.fits
       power: 3
@@ -73,6 +73,30 @@
   data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
   healpix:
     map: "kmapxx_kGMVbhTTprf_0_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_spt3g_mv_xilc
+  name: "SPT-3G CMB convergence (GMV xILC)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
+  healpix:
+    map: "kmapxx_kGMVxilc_0_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_spt3g_mv_mh
+  name: "SPT-3G CMB convergence (GMV grad-cleaned)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/data"
+  healpix:
+    map: "kmapxx_kGMVmh_0_1.fits"
     mask_border:
       file: border_mask2048.fits
       power: 3

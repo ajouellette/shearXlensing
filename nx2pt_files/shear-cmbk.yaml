@@ -13,6 +13,8 @@ tracers:
   ck_pol: *ck_spt3g_pol
   ck_mv: *ck_spt3g_mv
   ck_mv_prfhd: *ck_spt3g_mv_prfhd
+  ck_mv_xilc: *ck_spt3g_mv_xilc
+  ck_mv_mh: *ck_spt3g_mv_mv
 
 cross_spectra_pol:
   list:
@@ -43,6 +45,26 @@ cross_spectra_mv_prfhd:
     file: "data/cross_cls/data/desy3_update_spt3g_mv_prfhd_nside{nside}_lmax3500_log.fits"
     metadata:
       description: "DES-Y3 shear x SPT-3G profile-hardened GMV lensing"
+
+cross_spectra_mv_xilc:
+  list:
+    - tracers: [wl, ck_mv_xilc]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_xilc_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G xILC GMV lensing"
+
+cross_spectra_mv_mh:
+  list:
+    - tracers: [wl, ck_mv_mh]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_mh_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G grad cleaned GMV lensing"
 
 cross_spectra_pol_blue:
   list:
