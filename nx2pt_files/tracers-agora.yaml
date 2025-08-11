@@ -236,3 +236,177 @@
   name: "simulated SPT-3G Pol CMB convergence (Agora 10)"
   data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/10"
 
+## Profile-hardened reconstructions
+- &ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/01"
+  healpix:
+    map: "kmapxx_kGMVbhTTprf_5001_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_agora_mv_prfhd_rot02
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 2)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/02"
+
+- &ck_agora_mv_prfhd_rot03
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 3)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/03"
+
+- &ck_agora_mv_prfhd_rot04
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 4)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/04"
+
+- &ck_agora_mv_prfhd_rot05
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 5)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/05"
+
+- &ck_agora_mv_prfhd_rot06
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 6)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/06"
+
+- &ck_agora_mv_prfhd_rot07
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 7)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/07"
+
+- &ck_agora_mv_prfhd_rot08
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 8)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/08"
+
+- &ck_agora_mv_prfhd_rot09
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 9)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/09"
+
+- &ck_agora_mv_prfhd_rot10
+  <<: *ck_agora_mv_prfhd_rot01
+  name: "simulated SPT-3G Pol CMB convergence (Agora 10)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/10"
+
+## xILC reconstructions
+- &ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/01"
+  healpix:
+    map: "kmapxx_kGMVxilc_5001_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_agora_mv_xilc_rot02
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 2)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/02"
+
+- &ck_agora_mv_xilc_rot03
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 3)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/03"
+
+- &ck_agora_mv_xilc_rot04
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 4)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/04"
+
+- &ck_agora_mv_xilc_rot05
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 5)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/05"
+
+- &ck_agora_mv_xilc_rot06
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 6)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/06"
+
+- &ck_agora_mv_xilc_rot07
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 7)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/07"
+
+- &ck_agora_mv_xilc_rot08
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 8)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/08"
+
+- &ck_agora_mv_xilc_rot09
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 9)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/09"
+
+- &ck_agora_mv_xilc_rot10
+  <<: *ck_agora_mv_xilc_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 10)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/10"
+
+## grad-cleaned reconstructions
+- &ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 1)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/01"
+  healpix:
+    map: "kmapxx_kGMVmh_5001_1.fits"
+    mask_border:
+      file: border_mask2048.fits
+      power: 3
+      included_in_map: True
+    mask_ptsrc:
+      file: ptsrc_mask2048.fits
+
+- &ck_agora_mv_mh_rot02
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 2)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/02"
+
+- &ck_agora_mv_mh_rot03
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 3)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/03"
+
+- &ck_agora_mv_mh_rot04
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 4)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/04"
+
+- &ck_agora_mv_mh_rot05
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 5)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/05"
+
+- &ck_agora_mv_mh_rot06
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 6)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/06"
+
+- &ck_agora_mv_mh_rot07
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 7)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/07"
+
+- &ck_agora_mv_mh_rot08
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 8)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/08"
+
+- &ck_agora_mv_mh_rot09
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 9)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/09"
+
+- &ck_agora_mv_mh_rot10
+  <<: *ck_agora_mv_mh_rot01
+  name: "simulated SPT-3G MV CMB convergence (Agora 10)"
+  data_dir: "/projects/ncsa/caps/aaronjo2/shearXlensing/data/spt/lensrec_052425/agora/10"
+
