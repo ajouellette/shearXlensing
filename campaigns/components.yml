@@ -67,6 +67,8 @@ components:
             - pk_to_cl_shear_kappa.intrinsic-cmbkappa = F
         values:
             - del intrinsic_alignment_parameters
+        priors:
+            - del intrinsic_alignment_parameters
 
     nla_const_ia:  # NLA model with constant amplitude
         params:
@@ -150,170 +152,170 @@ components:
           - del 2pt_like.angle_range_shear_cl_4_3
           - del 2pt_like.angle_range_shear_cl_4_4
 
-    # scale cuts corresponding to given kmax (h / Mpc, Planck18 cosmo)
+    # scale cuts corresponding to given kmax (h / Mpc, Planck18 cosmo, logTagn = 7.8, IA = 0.44/0.0 for full/blue)
     # k = 1, 2.5, 5, 10
     scale_cuts_shear_shear_kmax1:
         params:
-          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 77.6
-          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 99.3
-          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 112.5
-          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 118.0
-          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 134.8
-          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 159.5
-          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 168.8
-          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 199.3
-          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 215.1
-          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 238.9
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 81.6
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 103.7
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 117.3
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 123.0
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 139.7
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 165.1
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 174.6
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 206.2
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 222.4
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 247.2
 
     scale_cuts_blue_shear_shear_kmax1:
         params:
-          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 92.5
-          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 111.0
-          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 126.2
-          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 135.0
-          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 136.5
-          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 158.9
-          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 171.7
-          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 189.4
-          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 206.8
-          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 231.4
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 95.9
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 115.0
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 130.9
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 140.1
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 141.5
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 164.7
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 178.0
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 196.2
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 214.4
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 240.0
 
     scale_cuts_shear_kappa_kmax1:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 153.1
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 211.0
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 272.2
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 328.9
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 159.9
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 218.1
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 280.6
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 339.5
 
     scale_cuts_blue_shear_kappa_kmax1:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 185.3
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 229.1
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 272.1
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 328.2
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 193.2
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 238.0
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 282.1
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 340.6
 
 
     scale_cuts_shear_shear_kmax2.5:
         params:
-            - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 218.1
-            - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 277.7
-            - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 312.9
-            - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 327.6
-            - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 376.0
-            - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 442.7
-            - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 467.3
-            - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 549.2
-            - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 590.4
-            - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 651.4
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 234.6
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 296.5
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 333.6
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 349.0
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 397.9
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 467.8
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 493.3
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 581.8
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 622.8
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 687.2
 
     scale_cuts_blue_shear_shear_kmax2.5:
         params:
-          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 259.5
-          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 309.6
-          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 350.4
-          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 373.7
-          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 379.1
-          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 439.3
-          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 472.8
-          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 521.4
-          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 567.4
-          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 631.0
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 275.1
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 328.1
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 371.4
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 396.1
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 401.3
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 464.8
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 500.3
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 551.3
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 599.9
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 667.1
 
     scale_cuts_shear_kappa_kmax2.5:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 422.4
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 577.4
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 743.2
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 884.6
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 450.0
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 607.9
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 780.5
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 929.6
 
     scale_cuts_blue_shear_kappa_kmax2.5:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 503.5
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 620.1
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 739.2
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 880.4
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 535.0
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 656.2
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 780.2
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 929.4
 
 
     scale_cuts_shear_shear_kmax5:
         params:
-            - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 549.9
-            - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 698.0
-            - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 784.5
-            - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 818.5
-            - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 941.5
-            - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 1104.1
-            - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 1161.2
-            - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 1364.2
-            - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 1463.0
-            - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 1607.7
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 578.2
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 728.4
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 818.3
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 853.8
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 972.5
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 1138.7
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 1197.2
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 1405.6
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 1506.8
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 1657.0
 
     scale_cuts_blue_shear_shear_kmax5:
         params:
-          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 654.1
-          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 777.5
-          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 878.2
-          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 932.2
-          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 947.3
-          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 1095.2
-          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 1174.3
-          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 1296.8
-          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 1407.5
-          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 1558.8
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 678.1
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 805.4
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 909.8
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 966.6
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 979.8
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 1132.1
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 1214.4
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 1338.8
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 1453.3
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 1610.0
 
     scale_cuts_shear_kappa_kmax5:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 1026.7
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 1396.3
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 1824.2
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2156.7
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 1071.4
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 1451.2
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 1871.1
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2216.0
 
     scale_cuts_blue_shear_kappa_kmax5:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 1213.5
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 1508.5
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 1810.7
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2144.2
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 1265.8
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 1563.2
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 1867.3
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2212.8
 
 
     scale_cuts_shear_shear_kmax10:
         params:
-            - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 1313.6
-            - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 1664.7
-            - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 1883.3
-            - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 1971.3
-            - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 2212.7
-            - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 2589.4
-            - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 2725.4
-            - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 3189.6
-            - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 3423.5
-            - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 3774.8
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 1303.9
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 1638.2
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 1847.8
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 1932.0
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 2159.7
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 2525.0
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 2657.1
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 3108.6
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 3334.8
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 3679.8
 
     scale_cuts_blue_shear_shear_kmax10:
         params:
-          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 1570.2
-          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 1859.2
-          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 2101.6
-          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 2236.3
-          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 2247.3
-          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 2591.6
-          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 2783.5
-          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 3049.7
-          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 3310.7
-          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 3674.2
+          - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 1535.7
+          - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 1817.2
+          - sacc_like.angle_range_cl_ee_wl_0_wl_2 = 0.0 2053.6
+          - sacc_like.angle_range_cl_ee_wl_0_wl_3 = 0.0 2186.5
+          - sacc_like.angle_range_cl_ee_wl_1_wl_1 = 0.0 2195.3
+          - sacc_like.angle_range_cl_ee_wl_1_wl_2 = 0.0 2530.7
+          - sacc_like.angle_range_cl_ee_wl_1_wl_3 = 0.0 2718.9
+          - sacc_like.angle_range_cl_ee_wl_2_wl_2 = 0.0 2975.9
+          - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 3231.1
+          - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 3587.2
 
     scale_cuts_shear_kappa_kmax10:
         params:
-            - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2469.3
-            - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 3300.3
-            - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 4223.2
-            - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 5031.9
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2423.8
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 3218.6
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 4104.4
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 4899.4
 
     scale_cuts_blue_shear_kappa_kmax10:
         params:
-          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2928.0
-          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 3582.8
-          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 4224.2
-          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 5024.4
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2878.9
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 3508.7
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 4126.0
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 4903.7
 
 
     del_scale_cuts_shear_shear:
