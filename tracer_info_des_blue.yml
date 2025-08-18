@@ -25,7 +25,7 @@ tracers:
       type: CMBLensing
       args:
           z_source: 1089
-          sky_mask: /u/aaronjo2/caps/shearXlensing/data/spt/mask2048_border_apod_mask.fits
+          sky_mask: /u/aaronjo2/caps/shearXlensing/data/spt/masks/mask2048_border_apod_mask_threshold0.1_allghz_dense.fits
 
     wl_0:
       type: WeakLensing
