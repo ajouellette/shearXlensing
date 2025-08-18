@@ -1,4 +1,4 @@
-#!include binning.yaml
+#!include ../binning.yaml
 nside: 2048
 binning: *wl_highell
 workspace_dir: "/scratch/aaronjo2/nmt_workspaces"
