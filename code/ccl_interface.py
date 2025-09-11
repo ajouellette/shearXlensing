@@ -6,6 +6,7 @@ from scipy import interpolate
 import fitsio
 import healpy as hp
 import pyccl as ccl
+import pymaster as nmt
 import nx2pt
 
 
@@ -65,7 +66,7 @@ def get_weak_lensing_tracer(cosmo, args, ia=None):
         dndz = get_dndz_fits(file_name, args["dndz"]["section"])
     else:
         raise NotImplementedError
-    delta_z = args.get("delta_z", 0)
+    delta_z = args["dndz"].get("delta_z", 0)
     if delta_z != 0:
         dndz = apply_photoz_bias(dndz, delta_z)
     if ia is not None:
@@ -168,18 +169,19 @@ class CCLTheory:
         else:
             self.cosmo = ccl.CosmologyVanillaLambdaCDM()
 
+        # intrinsic alignments
         if "ia" in config.keys():
             self.ia_z = get_ia_parameterization(config["ia"])
         else:
             self.ia_z = None
 
+        # halo model setup
         if "halomodel" in config.keys():
             mdef = config["halomodel"].get("mdef", None)
             hmf = config["halomodel"].get("hmf", None)
             hbias = config["halomodel"].get("hbias", None)
         else:
             mdef = hmf = hbias = None
-
         self.hm = CCLHaloModel(self.cosmo, mdef, hmf, hbias)
 
         # load tracers
@@ -193,8 +195,29 @@ class CCLTheory:
                 ccl_tracer = tracer_types[tracer["type"]](self.cosmo, tracer["args"])
             mask_file = tracer["args"].get("sky_mask", None)
             if mask_file is not None:
-                tracer["sky_mask"] = hp.read_map(mask_file).astype(bool)
+                tracer["sky_mask"] = hp.read_map(mask_file)
             tracer["ccl_tracer"] = ccl_tracer
+
+        # binning schemes for cross-spectra
+        if "binning" not in config.keys():
+            self.binning = None
+        else:
+            self.binning = dict()
+            for key, val in config["binning"].items():
+                if not isinstance(val, list):
+                    raise ValueError(f"must specify bandpower edges for {key} binning scheme")
+                self.binning[key] = val
+
+    def update_cosmo(self, **kwrds):
+        cosmo_dict = self.cosmo.to_dict()
+        update_dict = kwrds
+        if "logTagn" in update_dict:
+            logTagn = update_dict.pop("logTagn")
+            update_dict["extra_parameters"] = {"camb":
+                    {"halofit_version": "mead2020_feedback", "HMCode_logT_AGN": logTagn}}
+
+        cosmo_dict = cosmo_dict | update_dict
+        self.cosmo = ccl.Cosmology(**cosmo_dict)
             
     def get_cl(self, tracer1, tracer2, ell, use_hm=False, bpws=None):
         """Compute the cross-spectrum between tracer1 and tracer2."""
@@ -207,6 +230,26 @@ class CCLTheory:
             cl = nx2pt.bin_theory_cl(cl, bpws)
         return cl
 
+    def get_shot_noise_template(self, tracer, spin=0, beam=None):
+        nside = hp.npix2nside(len(self.tracers[tracer]["sky_mask"]))
+        if beam == "pixwin":
+            beam = hp.pixwin(nside)
+        bins = None
+        if self.binning is not None:
+            bpw_edges = self.binning.get('__'.join(2*(tracer.split('_')[0],)), None)
+            if bpw_edges is not None:
+                bins = nx2pt.get_nmtbins(nside, bpw_edges)
+        if bins is None:
+            raise ValueError(f"must specify bandpower edges for {tracer} x {tracer} cross-spectrum")
+        field = nmt.NmtField(self.tracers[tracer]["sky_mask"], None, spin=spin, beam=beam)
+        wksp = nx2pt.get_workspace(field, field, bins, wksp_cache="/scratch/aaronjo2/nmt_workspaces")
+        if spin == 0:
+            nl = [np.ones(bins.lmax+1)]
+        else:
+            nl = [np.ones(bins.lmax+1), np.zeros(bins.lmax+1), np.zeros(bins.lmax+1), np.ones(bins.lmax+1)]
+        nl = wksp.decouple_cell(nl)[0]
+        return bins.get_effective_ells(), nl
+
     def get_cov_gaussian(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, knox=False):
         pass
 
@@ -216,8 +259,12 @@ class CCLTheory:
         sigma_m2a = self.tracers[tracer2a]["args"].get("sigma_m", 0)
         sigma_m1b = self.tracers[tracer1b]["args"].get("sigma_m", 0)
         sigma_m2b = self.tracers[tracer2b]["args"].get("sigma_m", 0)
-        
+
         if bpws_b is None: bpws_b = bpws
+        # shortcut is all sigmas are zero
+        if sigma_m1a == 0 and sigma_m2a == 0 and sigma_m1b == 0 and sigma_m2b == 0:
+            return np.zeros(len(bpws), len(bpws_b))
+
         ell = np.arange(max(bpws.shape[1], bpws_b.shape[1]))
         cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
         cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws_b)
@@ -237,11 +284,21 @@ class CCLTheory:
         cov *= prior_factor
         return cov
 
+    def get_cov_marg_nl(self, tracer, ell, beam=None):
+        # only auto-spectra get shot noise contribution
+        sigma_nl = self.tracers[tracer]["args"].get("sigma_nl", 0)
+        if sigma_nl == 0:
+            return np.zeros(len(ell), len(ell))
+        ell_full, nl = self.get_shot_noise_template(tracer, beam=beam)
+        nl = nl[np.isin(ell_full, ell)]
+        cov = sigma_nl**2 * np.diag(nl**2)
+        return cov
+
     def get_fsky(self, tracer1a, tracer2a=None, tracer1b=None, tracer2b=None):
         if tracer2a is None: tracer2a = tracer1a
         if tracer1b is None: tracer1b = tracer1a
         if tracer2b is None: tracer2b = tracer2a
-        masks = [self.tracers[tr]["sky_mask"]
+        masks = [self.tracers[tr]["sky_mask"].astype(bool)
                  for tr in [tracer1a, tracer2a, tracer1b, tracer2b]]
         return np.mean(masks[0] * masks[1] * masks[2] * masks[3])
 
