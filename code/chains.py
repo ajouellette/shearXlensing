@@ -22,6 +22,8 @@ def get_latex_labels(param_names):
     # miscellaneous
     latex = latex | dict(a_lens="A_\\text{lens}", a_mod="A_\\text{mod}", logt_agn="\\log T_\\text{AGN}",
                          a_planck="A_\\text{planck}")
+    # TODO: need better system for shot noise parameters
+    latex = latex | {f"wl_{i}_wl_{i}": f"\\text{{sn}}_{i}" for i in range(10)}
     
     if isinstance(param_names, str):
         return latex.get(param_names, param_names)
@@ -29,7 +31,18 @@ def get_latex_labels(param_names):
     return map(lambda p: latex.get(p, p), param_names)
 
 
-def load_cosmosis_chain(fname, label=None, quiet=False):
+def get_diff_chain(chain1, chain2, params, boost=2, label=None):
+    diff_len = boost * min(len(chain1.samples), len(chain2.samples))
+    inds1 = np.random.choice(len(chain1.samples), diff_len)
+    inds2 = np.random.choice(len(chain2.samples), diff_len)
+    diff_samples = np.array([getattr(chain1.getParams(), p)[inds1] - getattr(chain2.getParams(), p)[inds2]
+                             for p in params]).T
+    weights = chain1.weights[inds1] * chain2.weights[inds2]
+    diff_chain = getdist.MCSamples(samples=diff_samples, weights=weights, names=params, labels=get_latex_labels(params), label=label)
+    return diff_chain
+
+
+def load_cosmosis_chain(fname, label=None, verbose=False, ignore_dup_params=False):
     """Load a cosmosis chain from a file."""
     # read the header
     header = []
@@ -51,7 +64,7 @@ def load_cosmosis_chain(fname, label=None, quiet=False):
     sampler = header.pop(0).split('=')[1].strip()
     if sampler not in samplers.keys():
         raise NotImplementedError(f"unknown sampler {sampler}")
-    if not quiet:
+    if verbose:
         print("sampler:", sampler)
 
     data = np.atleast_2d(np.loadtxt(fname, comments='#'))
@@ -60,7 +73,7 @@ def load_cosmosis_chain(fname, label=None, quiet=False):
     for param, inds in p_inds.items():
         if len(inds) > 1:
             is_equal = np.all([np.isclose(data[:,inds[0]], data[:,i]).all() for i in inds[1:]])
-            if not is_equal:
+            if not is_equal and not ignore_dup_params:
                 raise RuntimeError(f"found different parameters with the same name: {param}")
             remove_inds += inds[1:]
     mask = np.ones(len(params), dtype=bool)
@@ -68,8 +81,13 @@ def load_cosmosis_chain(fname, label=None, quiet=False):
     data = data[:,mask]
     params = [p for i, p in enumerate(params) if i not in remove_inds]
 
+    # remove parameters that are all NaNs
+    is_nan = np.isnan(data).all(axis=0)
+    data = data[:,~is_nan]
+    params = [p for i, p in enumerate(params) if not is_nan[i]]
+
     chain = samplers[sampler](params, data, header=header, label=label)
-    if isinstance(chain, getdist.MCSamples) and not quiet:
+    if isinstance(chain, getdist.MCSamples) and verbose:
         print(chain.getNumSampleSummaryText())
 
     # try to add derived parameters
