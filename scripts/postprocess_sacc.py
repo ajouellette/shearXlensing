@@ -155,6 +155,21 @@ def calc_cov_margem(s, theory, method="des", self_test=True):
     return cov
 
 
+def calc_cov_marg_nl(s, theory, beam=None):
+    cov = np.zeros((len(s.mean), len(s.mean)))
+    for tracers in s.get_tracer_combinations():
+        if tracers[0] != tracers[1]:
+            continue
+        for dtype in s.get_data_types(tracers):
+            if 'b' in dtype:
+                continue
+            inds = s.indices(tracers=tracers, data_type=dtype)
+            ell, _, inds = s.get_ell_cl(dtype, *tracers, return_ind=True)
+            block = theory.get_cov_marg_nl(tracers[0], ell, beam=beam)
+            cov[np.ix_(inds, inds)] = block
+    return cov
+
+
 def calc_cov_ng(s, theory, kind="ssc"):
     """Compute covariance term due to marginalizing over shear m bias."""
     if kind not in ["ssc", "cng", "both"]:
@@ -197,6 +212,32 @@ def add_non_gauss_cov(s, theory, kind="ssc"):
     return s_new
 
 
+def calc_shot_noise_templates(s, theory):
+    """Compute and store shot noise templates."""
+    # sanity checks
+    for tracer in s.tracers.keys():
+        if tracer not in theory.tracers.keys():
+            raise ValueError("Theory object does not have the same tracers as the sacc file.")
+    excluded_tracers = ["ck",]
+    s_new = s.copy()
+    for tr1, tr2 in s_new.get_tracer_combinations():
+        if tr1 != tr2:
+            continue
+        if tr1 in excluded_tracers:
+            continue
+        ell, nl = theory.get_shot_noise_template(tr1, beam="pixwin")
+        for dtype in s_new.get_data_types(tracers=(tr1, tr1)):
+            if dtype not in ["cl_00", "cl_ee", "cl_bb"]:
+                continue
+            ell_data, _, inds = s_new.get_ell_cl(dtype, tr1, tr1, return_ind=True)
+            nl_ = nl[np.isin(ell, ell_data)]
+            if len(nl_) != len(ell_data):
+                raise ValueError("mismatch between ell binning in data and theory files")
+            for nl_i, ind in enumerate(inds):
+                s_new.data[ind].tags["nl"] = nl_[nl_i]
+    return s_new
+
+
 def marginalize_m(s, theory, method="des"):
     """Correct for any multiplicative biases and marginalize over their uncertainty."""
     # sanity checks
@@ -209,6 +250,21 @@ def marginalize_m(s, theory, method="des"):
     s_new.add_covariance(cov, overwrite=True)
     # add a metadata flag
     s_new.metadata["marginalized_over_m_bias"] = True
+    return s_new
+
+
+def marginalize_nl(s, theory):
+    """Correct for any multiplicative biases and marginalize over their uncertainty."""
+    # sanity checks
+    for tracer in s.tracers.keys():
+        if tracer not in theory.tracers.keys():
+            raise ValueError("Theory object does not have the same tracers as the sacc file.")
+    # this simply modifies the covariance, does not de-bias Cls
+    s_new = s.copy()
+    cov = s.covariance.covmat + calc_cov_marg_nl(s, theory, beam="pixwin")
+    s_new.add_covariance(cov, overwrite=True)
+    # add a metadata flag
+    s_new.metadata["marginalized_over_nl_bias"] = True
     return s_new
 
 
@@ -237,11 +293,13 @@ def main():
     parser.add_argument("--from-sacc", help="use covariance from another sacc file")
     parser.add_argument("--cmbk-tf", help="correct for a CMB lensing transfer function")
     parser.add_argument("-m", "--marg-shear-bias", action="store_true", help="marginalize over shear multiplicative bias")
+    parser.add_argument("--marg-nl", action="store_true", help="marginalize over uncertainty in shot noise bias")
     parser.add_argument("--marg-method", default="des", choices=["des", "kids"], help="method used to marginalize over shear bias")
     parser.add_argument("-t", "--theory", help="file describing tracers and how to calculate theory spectra")
     parser.add_argument("--non-gaussian", action="store_true", help="compute non-Gaussian covariance terms (SSC + cNG)")
     parser.add_argument("--ssc", action="store_true", help="compute SSC term")
     parser.add_argument("--cng", action="store_true", help="compute cNG term")
+    parser.add_argument("--compute-nl-templates", action="store_true", help="compute shot noise templates (stored as tags on data points)")
     
     theory = None
     args = parser.parse_args()
@@ -277,6 +335,26 @@ def main():
         else:
             raise ValueError("Must provide tracer info to calculate analytical covariances")
         s = marginalize_m(s, theory, method=args.marg_method)
+
+    # shot noise templates
+    if args.compute_nl_templates:
+        print(f"Computing shot noise templates...")
+        if theory is None and args.theory is not None:
+            print("Loading tracer info from", args.theory)
+            theory = ccl_interface.CCLTheory.load_config(args.theory)
+        else:
+            raise ValueError("Must provide tracer info to compute shot noise templates")
+        s = calc_shot_noise_templates(s, theory)
+
+    # shot noise bias marginalization
+    if args.marg_nl:
+        print(f"Marginalizing over residual shot noise...")
+        if theory is None and args.theory is not None:
+            print("Loading tracer info from", args.theory)
+            theory = ccl_interface.CCLTheory.load_config(args.theory)
+        else:
+            raise ValueError("Must provide tracer info to calculate analytical covariances")
+        s = marginalize_nl(s, theory)
 
     # non-Gaussian covariance terms
     if args.non_gaussian or args.ssc or args.cng:
