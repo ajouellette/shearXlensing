@@ -168,6 +168,8 @@ class CCLTheory:
             self.cosmo = get_cosmo(config["cosmo"])
         else:
             self.cosmo = ccl.CosmologyVanillaLambdaCDM()
+        # save original cosmo
+        self._cosmo_orig = self.cosmo
 
         # intrinsic alignments
         if "ia" in config.keys():
@@ -209,15 +211,25 @@ class CCLTheory:
                 self.binning[key] = val
 
     def update_cosmo(self, **kwrds):
+        """Update cosmology with given parameters."""
         cosmo_dict = self.cosmo.to_dict()
         update_dict = kwrds
+        # make sure A_s and sigma_8 don't conflict
+        if "sigma8" in update_dict and "A_s" in cosmo_dict:
+            del cosmo_dict["A_s"]
+        if "A_s" in update_dict and "sigma8" in cosmo_dict:
+            del cosmo_dict["sigma8"]
+        # logTagn needs to go through camb
         if "logTagn" in update_dict:
             logTagn = update_dict.pop("logTagn")
             update_dict["extra_parameters"] = {"camb":
                     {"halofit_version": "mead2020_feedback", "HMCode_logT_AGN": logTagn}}
-
         cosmo_dict = cosmo_dict | update_dict
         self.cosmo = ccl.Cosmology(**cosmo_dict)
+
+    def reset_cosmo(self):
+        """Reset cosmology to the initial values."""
+        self.cosmo = self._cosmo_orig
             
     def get_cl(self, tracer1, tracer2, ell, use_hm=False, bpws=None):
         """Compute the cross-spectrum between tracer1 and tracer2."""
@@ -227,7 +239,7 @@ class CCLTheory:
         m2 = self.tracers[tracer2]["args"].get("m_bias", 0)
         cl = (1 + m1) * (1 + m2) * self.cosmo.angular_cl(tr1, tr2, ell)
         if bpws is not None:
-            cl = nx2pt.bin_theory_cl(cl, bpws)
+            cl = nx2pt.bin_theory_cl(cl, bpws, ell=ell)
         return cl
 
     def get_shot_noise_template(self, tracer, spin=0, beam=None):
@@ -250,7 +262,7 @@ class CCLTheory:
         nl = wksp.decouple_cell(nl)[0]
         return bins.get_effective_ells(), nl
 
-    def get_cov_gaussian(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, knox=False):
+    def get_cov_gaussian(self, tracer1a, tracer2a, tracer1b, tracer2b):
         pass
 
     def get_cov_marg_m(self, tracer1a, tracer2a, tracer1b, tracer2b, bpws, bpws_b=None, method="des"):
@@ -265,7 +277,7 @@ class CCLTheory:
         if sigma_m1a == 0 and sigma_m2a == 0 and sigma_m1b == 0 and sigma_m2b == 0:
             return np.zeros(len(bpws), len(bpws_b))
 
-        ell = np.arange(max(bpws.shape[1], bpws_b.shape[1]))
+        ell = np.geomspace(2, max(bpws.shape[1], bpws_b.shape[1]), 250)
         cl_a = self.get_cl(tracer1a, tracer2a, ell, bpws=bpws)
         cl_b = self.get_cl(tracer1b, tracer2b, ell, bpws=bpws_b)
         cov = np.outer(cl_a, cl_b)
