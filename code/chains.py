@@ -16,6 +16,7 @@ def get_latex_labels(param_names):
                  sigma_8="\\sigma_8", s_8="S_8", wa="w_a", mnu="m_\\nu")
     # intrinsic alignment
     latex = latex | dict(a1="A_1", a2="A_2", alpha1="\\alpha_1", alpha2="\\alpha_2", bias_ta="b_\\text{ta}")
+    latex = latex | {f"a1_{i}": f"A_1^{{({i})}}" for i in range(10)}
     # nusiance parameters
     latex = latex | {f"m{i}": f"m_{i}" for i in range(10)}
     latex = latex | {f"bias_{i}": f"\\Delta z_{i}" for i in range(10)}
