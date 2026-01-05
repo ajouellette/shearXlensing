@@ -13,27 +13,37 @@ def cum_chi2(datavec, cov):
     return chi2s
 
 
-def get_kmax_ell_cut(cosmo, tracer1, tracer2, kmax, thresh=0.95, smooth_lk=5e-2):
+def trunc_pk(pk, kmax, smooth_lk=5e-2):
+    """Exponentially suppress given power spectrum for k > kmax."""
+    suppression = lambda k: stats.logistic.sf(np.log(k / kmax) / smooth_lk)
+    return ccl.Pk2D.from_function(lambda k, a: pk(k, a) * suppression(k), is_logp=False)
+
+
+def get_kmax_ell_cut(cosmo, tracer1, tracer2, kmax, bpws=None, thresh=0.95, smooth_lk=5e-2):
     """Calculate max ell for Cl that corresponds to a max k scale."""
     pk = cosmo.parse_pk(p_of_k_a="nonlinear")
     # apply k-cut to power spectrum
-    pk_cut = ccl.Pk2D.from_function(lambda k, a: pk(k, a) * stats.logistic.sf(np.log(k / kmax) / smooth_lk), is_logp=False)
+    pk_cut = trunc_pk(pk, kmax, smooth_lk=smooth_lk)
     # calculate cls
     ell = np.hstack([np.linspace(2, 102, 50), np.geomspace(104, 1e4, 150)])
     cl = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk)
     cl_cut = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk_cut)
-    ratio = cl_cut / cl
-    #print(np.min(ratio), np.max(ratio))
-    # interpolate ratio to find ell cut
-    ell_cut = interpolate.interp1d(ratio, ell)(thresh)
-    return ell_cut
+    if bpws is None:
+        ratio = cl_cut / cl
+        # interpolate ratio to find ell cut
+        ell_cut = interpolate.interp1d(ratio, ell)(thresh)
+        return ell_cut
+    else:
+        cl = nx2pt.bin_theory_cl(cl, bpws, ell=ell)
+        cl_cut = nx2pt.bin_theory_cl(cl_cut, bpws, ell=ell)
+        return np.abs(1 - cl_cut / cl) < 1 - thresh
 
 
 def get_kmax_ell_cut_chi2(cosmo, tracer1, tracer2, kmax, bpws, cov, thresh=1, smooth_lk=5e-2):
     """ """
     pk = cosmo.parse_pk(p_of_k_a="nonlinear")
     # apply k-cut to power spectrum
-    pk_cut = ccl.Pk2D.from_function(lambda k, a: pk(k, a) * stats.logistic.sf(np.log(k / kmax) / smooth_lk), is_logp=False)
+    pk_cut = trunc_pk(pk, kmax, smooth_lk=smooth_lk)
     # calculate cls and make data vectors
     ell = np.hstack([np.linspace(2, 102, 50), np.geomspace(104, 1e4, 150)])
     cl = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk)
@@ -52,13 +62,13 @@ def get_kmax_theta_cut(cosmo, tracer1, tracer2, kmax, thresh=0.95, smooth_lk=5e-
     """Calculate min thetas for xi+, xi- that correspond to a max k scale."""
     pk = cosmo.parse_pk(p_of_k_a="nonlinear")
     # apply k-cut to power spectrum
-    pk_cut = ccl.Pk2D.from_function(lambda k, a: pk(k, a) * stats.logistic.sf(np.log(k / kmax) / smooth_lk), is_logp=False)
+    pk_cut = trunc_pk(pk, kmax, smooth_lk=smooth_lk)
     # calculate cls
     ell = np.hstack([np.linspace(1, 101, 50), np.geomspace(103, 5e5, 250)])
     cl = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk)
     cl_cut = cosmo.angular_cl(tracer1, tracer2, ell, p_of_k_a=pk_cut)
     # compute xip / xim
-    theta = np.geomspace(0.1, 150, 150) / 60  # deg
+    theta = np.geomspace(0.1, 250, 200) / 60  # deg
     ratio_p = cosmo.correlation(ell=ell, C_ell=cl_cut, theta=theta, type="GG+") / cosmo.correlation(ell=ell, C_ell=cl, theta=theta, type="GG+")
     ratio_m = cosmo.correlation(ell=ell, C_ell=cl_cut, theta=theta, type="GG-") / cosmo.correlation(ell=ell, C_ell=cl, theta=theta, type="GG-")
     #print(np.min(ratio_p), np.max(ratio_p))
