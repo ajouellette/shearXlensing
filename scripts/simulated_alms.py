@@ -6,6 +6,7 @@ from os import path
 import glob
 import numpy as np
 import healpy as hp
+import pymaster as nmt
 
 sys.path.insert(0, "/projects/ncsa/caps/aaronjo2/shearXlensing/code")
 from agora_rotations import get_rotator
@@ -39,12 +40,14 @@ field_types = {
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Calculate alms from simulated full-sky fields.")
+    parser = argparse.ArgumentParser(description="Calculate alms from simulated full-sky fields.", epilog=f"Possible fields: {list(field_types.keys())}")
     parser.add_argument("sim_dir")
     parser.add_argument("field_type")
-    parser.add_argument("-o", "--output")
-    parser.add_argument("--lmax-save", type=int, default=4500)
+    parser.add_argument("-o", "--output", help="output dir")
+    parser.add_argument("--no-rot", action="store_true")
+    parser.add_argument("--lmax-save", type=int, default=8000, help="default: %(default)s")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--nmt-niter", default=3, type=int, help="default: %(default)d")
     args = parser.parse_args()
 
     if args.field_type not in field_types:
@@ -70,33 +73,30 @@ if __name__ == "__main__":
 
         print("loading", filename)
         maps = field_info["load_field"](filename)
-        nside = hp.npix2nside(len(maps[0])) if field_info["spin"] != 0 else hp.npix2nside(len(maps))
-        lmax_save = min(3*nside-1, args.lmax_save)
+        map_info = nmt.NmtMapInfo(None, [maps.shape[-1],])
+        alm_info = nmt.NmtAlmInfo(map_info.get_lmax())
+        lmax_save = min(map_info.get_lmax(), args.lmax_save)
         
         rot_alms = dict()
-        with Timer(f"computing alms at nside {nside}"):
-            if field_info["spin"] > 0:
-                #alm = hp.map2alm_spin(maps, spin=field_info["spin"], lmax=2*nside)
-                alm = hp.map2alm_spin(maps, spin=field_info["spin"])
-            else:
-                #alm = hp.map2alm(maps, lmax=2*nside)
-                alm = hp.map2alm(maps)
-            alm = hp.resize_alm(alm, 3*nside-1, 3*nside-1, lmax_save, lmax_save)
+        with Timer(f"computing alms at nside {map_info.nside}"):
+            alm = nmt.map2alm(maps, field_info["spin"], map_info, alm_info, n_iter=args.nmt_niter)
+            alm = hp.resize_alm(alm, map_info.get_lmax(), map_info.get_lmax(), lmax_save, lmax_save)
             print(len(alm), hp.Alm.getlmax(len(alm)))
             rot_alms['1'] = alm
 
         # don't need maps after calculating alms
         del maps
         
-        # compute all rotations
-        for rot_i in range(1, 10):
-            with Timer(f"computing rotation {rot_i}"):
-                rot = get_rotator(rot_i)
-                if field_info["spin"] > 0:
-                    rot_alm = [rot.rotate_alm(alm_i) for alm_i in alm]
-                else:
-                    rot_alm = rot.rotate_alm(alm)
-                rot_alms[str(rot_i+1)] = rot_alm
+        if not args.no_rot:
+            # compute all rotations
+            for rot_i in range(1, 10):
+                with Timer(f"computing rotation {rot_i}"):
+                    rot = get_rotator(rot_i)
+                    if field_info["spin"] > 0:
+                        rot_alm = [rot.rotate_alm(alm_i) for alm_i in alm]
+                    else:
+                        rot_alm = rot.rotate_alm(alm)
+                    rot_alms[str(rot_i+1)] = rot_alm
 
         print("saving to", save_name)
         np.savez(save_name, **rot_alms)
