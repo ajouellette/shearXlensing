@@ -40,7 +40,9 @@ if __name__ == "__main__":
     parser.add_argument("cat_dir")
     parser.add_argument("-o", "--output")
     parser.add_argument("--no-ia", action="store_true")
-    parser.add_argument("--noise_level", default=1, type=float, help="noise level relative to that of provided catalogs")
+    parser.add_argument("--reduced-shear", action="store_true")
+    parser.add_argument("--noise-level", default=1, type=float, help="noise level relative to that of provided catalogs")
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
     shear_pattern = "shear/fullsky/maps/raytrace_kg1g2_*_fullsky.fits"
@@ -73,6 +75,9 @@ if __name__ == "__main__":
         print("---")
 
         shear_maps = hp.read_map(shear_files[zbin], field=[1,2])
+        if args.reduced_shear:
+            kappa_map = hp.read_map(shear_files[zbin], field=0)
+            shear_maps /= 1 - kappa_map
         if not args.no_ia:
             ia_maps = hp.read_map(ia_files[zbin], field=[1,2])
             shear_maps += ia_maps
@@ -83,7 +88,7 @@ if __name__ == "__main__":
             print(f"Rotation {i+1}:")
             
             save_name = path.join(args.output, f"desy3_mockcat_zbin{zbin+1}_rot{i+1:02}.fits")
-            if os.path.exists(save_name):
+            if os.path.exists(save_name) and not args.overwrite:
                 print(f"{save_name} exists, skipping")
                 continue
 
@@ -98,4 +103,4 @@ if __name__ == "__main__":
             # save catalog
             os.makedirs(path.dirname(save_name), exist_ok=True)
             print("saving to", save_name)
-            sim_cat.write(save_name)
+            sim_cat.write(save_name, overwrite=True)
