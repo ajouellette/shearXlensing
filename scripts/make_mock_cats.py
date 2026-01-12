@@ -94,8 +94,11 @@ if __name__ == "__main__":
 
             rot = get_rotator(i)
             # rotate signal maps
-            with Timer("rotating signal map"):
-                rot_signal = rot.rotate_map_pixel(shear_maps)
+            if np.allclose(rot.mat, np.eye(3)):
+                rot_signal = shear_maps
+            else:
+                with Timer("rotating signal map"):
+                    rot_signal = rot.rotate_map_pixel(shear_maps)
 
             with Timer("generating catalog"):
                 sim_cat = gen_shear_catalog(rot_signal, catalog, noise_level=args.noise_level)
