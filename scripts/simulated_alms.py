@@ -72,7 +72,7 @@ if __name__ == "__main__":
             continue
 
         print("loading", filename)
-        maps = field_info["load_field"](filename)
+        maps = field_info["load_field"](filename).astype(float)  # make sure maps are float64
         map_info = nmt.NmtMapInfo(None, [maps.shape[-1],])
         alm_info = nmt.NmtAlmInfo(map_info.get_lmax())
         lmax_save = min(map_info.get_lmax(), args.lmax_save)
@@ -81,11 +81,6 @@ if __name__ == "__main__":
         with Timer(f"computing alms at nside {map_info.nside}"):
             alm = nmt.map2alm(maps, field_info["spin"], map_info, alm_info, n_iter=args.nmt_niter)
             alm = hp.resize_alm(alm, map_info.get_lmax(), map_info.get_lmax(), lmax_save, lmax_save)
-            # make sure alms are np.complex128 to avoid healpy bug(?)
-            if isinstance(alm, list):
-                alm = [x.astype(np.complex128) for x in alm]
-            else:
-                alm = alm.astype(np.complex128)
             print([hp.Alm.getlmax(len(x)) for x in alm] if isinstance(alm, list) else hp.Alm.getlmax(len(alm)))
             rot_alms['1'] = alm
 
