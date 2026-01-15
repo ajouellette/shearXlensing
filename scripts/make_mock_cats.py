@@ -55,9 +55,9 @@ if __name__ == "__main__":
     parser.add_argument("sim_dir")
     parser.add_argument("cat_dir")
     parser.add_argument("-o", "--output")
-    parser.add_argument("--no-ia", action="store_true")
-    parser.add_argument("--reduced-shear", action="store_true")
-    parser.add_argument("--noise-level", default=1, type=float, help="noise level relative to that of provided catalogs")
+    parser.add_argument("--no-ia", action="store_true", help="don't include IA in mock catalogs")
+    parser.add_argument("--reduced-shear", action="store_true", help="calculate reduced shear instead of shear")
+    parser.add_argument("--noise-level", default=1, type=float, help="noise level relative to that of provided catalogs (default: %(default)s)")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
