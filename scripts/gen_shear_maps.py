@@ -21,6 +21,8 @@ def main():
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("-o", "--output")
     parser.add_argument("--extra-mask")
+    parser.add_argument("--uniform-weights", action="store_true")
+    parser.add_argument("--cut-wrt-nmean", default=None, type=float)
     parser.add_argument("--pattern", default="*.fits")
     parser.add_argument("--do-psf", action="store_true")
     args = parser.parse_args()
@@ -65,18 +67,30 @@ def main():
 
         # weights map
         print("computing mask...")
+        if not args.uniform_weights:
+            weights = cat["weight"]
+        else:
+            weights = np.ones(len(cat))
         # if using an extra mask, modify galaxy weights
-        weights = cat["weight"]
         if extra_mask is not None:
             weights *= extra_mask[ipix]
         w_map = make_healpix_map(nside, ipix=ipix, vals=weights)
-        hp.write_map(save_name_mask, w_map, overwrite=True)
         mask_b = w_map > 0
 
         # calculate avg number of galaxies per pixel
         nmap = make_healpix_map(nside, ipix=ipix)
         print(f"number of galaxies per pixel (min / mean / max): {np.min(nmap[mask_b])} / {np.mean(nmap[mask_b]):.2f} / {np.max(nmap[mask_b])}")
         print(f"weighted avg number of galaxies per pixel: {np.average(nmap[mask_b], weights=w_map[mask_b]):.2f}")
+
+        if args.cut_wrt_nmean is not None:
+            mask = nmap > np.mean(nmap[mask_b]) * args.cut_wrt_nmean
+            w_map = w_map * mask
+            mask_b = w_map > 0
+            print(f"number of galaxies per pixel (min / mean / max): {np.min(nmap[mask_b])} / {np.mean(nmap[mask_b]):.2f} / {np.max(nmap[mask_b])}")
+            print(f"weighted avg number of galaxies per pixel: {np.average(nmap[mask_b], weights=w_map[mask_b]):.2f}")
+
+        if overwrite or not path.exists(save_name_mask):
+            hp.write_map(save_name_mask, w_map, overwrite=True)
 
         # weighted shear maps
         if overwrite or not path.exists(save_name_maps): 
