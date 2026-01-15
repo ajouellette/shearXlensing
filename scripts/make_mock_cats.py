@@ -19,15 +19,31 @@ def rotate_e1e2_rand(e1, e2, seed=None):
     return rot.real, rot.imag
 
 
-def gen_shear_catalog(signal_maps, catalog, seed=None, noise_level=1):
+def gen_shear_catalog(signal_maps, catalog, rot=None, seed=None, noise_level=1):
     nside = hp.npix2nside(len(signal_maps[0]))
-    cat_inds = hp.ang2pix(nside, catalog["ra"], catalog["dec"], lonlat=True)
-    # generate noise
-    g1_n, g2_n = rotate_e1e2_rand(catalog["g_1"], catalog["g_2"], seed=seed)
-    # signal + noise
+    # sample signal (possibly at rotated coordinates)
+    # don't do rotation if rotation is identity
+    do_rot = False if rot is None else not np.allclose(rot.mat, np.eye(3))
+    if do_rot:
+        ra_rot, dec_rot = rot([catalog["ra"], catalog["dec"]], lonlat=True)
+        ra_rot = ra_rot % 360
+        cat_inds = hp.ang2pix(nside, ra_rot, dec_rot, lonlat=True)
+    else:
+        cat_inds = hp.ang2pix(nside, catalog["ra"], catalog["dec"], lonlat=True)
     # here we just sample the value of the pixel, should be ok if nside is high enough
-    g1 = signal_maps[0][cat_inds] + noise_level * g1_n
-    g2 = signal_maps[1][cat_inds] + noise_level * g2_n
+    g1 = signal_maps[0][cat_inds]
+    g2 = signal_maps[1][cat_inds]
+    if do_rot:
+        # need to rotate signal back to original frame
+        phi_rot = rot.angle_ref([ra_rot, dec_rot], lonlat=True, inv=True)
+        shear_rot = np.exp(2j * phi_rot) * (g1 + 1j * g2)
+        g1 = shear_rot.real
+        g2 = shear_rot.imag
+    if noise_level > 0:
+        # generate noise
+        g1_n, g2_n = rotate_e1e2_rand(catalog["g_1"], catalog["g_2"], seed=seed)
+        g1 += noise_level * g1_n
+        g2 += noise_level * g2_n
     # new catalog
     sim_cat = Table(dict(ra=catalog["ra"], dec=catalog["dec"],
                          weight=catalog["weight"], g_1=g1, g_2=g2))
@@ -93,15 +109,8 @@ if __name__ == "__main__":
                 continue
 
             rot = get_rotator(i)
-            # rotate signal maps
-            if np.allclose(rot.mat, np.eye(3)):
-                rot_signal = shear_maps
-            else:
-                with Timer("rotating signal map"):
-                    rot_signal = rot.rotate_map_pixel(shear_maps)
-
             with Timer("generating catalog"):
-                sim_cat = gen_shear_catalog(rot_signal, catalog, noise_level=args.noise_level)
+                sim_cat = gen_shear_catalog(shear_maps, catalog, rot=rot, noise_level=args.noise_level)
 
             # save catalog
             os.makedirs(path.dirname(save_name), exist_ok=True)
