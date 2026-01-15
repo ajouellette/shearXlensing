@@ -17,14 +17,14 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("cat_dir")
-    parser.add_argument("--nside", default=2048, type=int)
+    parser.add_argument("--nside", default=2048, type=int, help="default: %(default)s")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("-o", "--output")
-    parser.add_argument("--extra-mask")
-    parser.add_argument("--uniform-weights", action="store_true")
-    parser.add_argument("--cut-wrt-nmean", default=None, type=float)
+    parser.add_argument("--extra-mask", help="path to an extra mask to apply to the shear maps")
+    parser.add_argument("--uniform-weights", action="store_true", help="use uniform weights instead of those in catalog")
+    parser.add_argument("--cut-wrt-nmean", default=None, type=float, help="optionally mask pixels that have fewer galaxies than factor x Nmean")
     parser.add_argument("--pattern", default="*.fits")
-    parser.add_argument("--do-psf", action="store_true")
+    parser.add_argument("--do-psf", action="store_true", help="make PSF maps in addition to shear")
     args = parser.parse_args()
 
     nside = args.nside
