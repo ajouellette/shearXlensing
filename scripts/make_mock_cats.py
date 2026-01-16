@@ -25,8 +25,8 @@ def gen_shear_catalog(signal_maps, catalog, rot=None, seed=None, noise_level=1):
     # don't do rotation if rotation is identity
     do_rot = False if rot is None else not np.allclose(rot.mat, np.eye(3))
     if do_rot:
-        ra_rot, dec_rot = rot([catalog["ra"], catalog["dec"]], lonlat=True)
-        ra_rot = ra_rot % 360
+        # inverse rotation to find positions that rotate into patch
+        ra_rot, dec_rot = rot([catalog["ra"], catalog["dec"]], lonlat=True, inv=True)
         cat_inds = hp.ang2pix(nside, ra_rot, dec_rot, lonlat=True)
     else:
         cat_inds = hp.ang2pix(nside, catalog["ra"], catalog["dec"], lonlat=True)
@@ -35,7 +35,7 @@ def gen_shear_catalog(signal_maps, catalog, rot=None, seed=None, noise_level=1):
     g2 = signal_maps[1][cat_inds]
     if do_rot:
         # need to rotate signal back to original frame
-        phi_rot = rot.angle_ref([ra_rot, dec_rot], lonlat=True, inv=True)
+        phi_rot = rot.angle_ref([ra_rot, dec_rot], lonlat=True)
         shear_rot = np.exp(2j * phi_rot) * (g1 + 1j * g2)
         g1 = shear_rot.real
         g2 = shear_rot.imag
