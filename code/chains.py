@@ -43,6 +43,14 @@ def get_diff_chain(chain1, chain2, params, boost=2, label=None):
     return diff_chain
 
 
+def gauss_point_tension(chain, truth, params):
+    """Calculate the gaussian tension (as a chi2 value) between a chain and true parameter values."""
+    true_mean = np.array([truth[p] for p in params])
+    diff = chain.mean(params) - true_mean
+    chi2 = diff @ np.linalg.solve(chain.cov(pars=params), diff)
+    return chi2
+
+
 def load_cosmosis_chain(fname, label=None, verbose=False, ignore_dup_params=False):
     """Load a cosmosis chain from a file."""
     # read the header
