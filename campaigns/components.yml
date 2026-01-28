@@ -22,7 +22,7 @@ components:
             - del cosmological_parameters.a_s
             - del cosmological_parameters.log1e10As
             - del cosmological_parameters.a_s_1e9
-            - cosmological_parameters.S_8 = 0.3  0.83  1.3
+            - cosmological_parameters.S_8 = 0.3  0.825  1.3
 
     free_tau:  # sample tau
         values:
@@ -56,6 +56,46 @@ components:
             - camb.halofit_version = mead2020_feedback
         values:
             - halo_model_parameters.logT_agn = 7.3  7.8  8.3
+
+    dm_only:  # HMCode without baryonic feedback
+        params:
+            - camb.halofit_version = mead2020
+        values:
+            - del halo_model_parameters
+
+    baccoemu:
+        pipeline:
+          - after camb delete_nl bacco_emu
+        params:
+            - camb.halofit_version = mead2020
+            - bacco_emu.mode = nonlinear+baryons
+        values:
+            - baryon_parameters.M_c = 9.0  14.0  15.0
+            - baryon_parameters.eta = -0.698  -0.3 0.698
+            - baryon_parameters.beta = -1.0  -0.22 0.698
+            - baryon_parameters.M1_z0_cen = 9.0 10.5  13.0
+            - baryon_parameters.theta_out = 0.0 0.25  0.477
+            - baryon_parameters.theta_inn = -2.0  -0.86  -0.522
+            - baryon_parameters.M_inn = 9.0  13.4  13.5
+
+    baccoemu_bahamas_prior:
+        values:
+            - baryon_parameters.eta = -0.33
+            - baryon_parameters.beta = -0.28
+            - baryon_parameters.M1_z0_cen = 10.21
+            - baryon_parameters.theta_out = 0.12
+            - baryon_parameters.theta_inn = -0.62
+            - baryon_parameters.M_inn = 9.95
+
+    baccoemu_cluster_prior:
+        priors:
+            - baryon_parameters.beta = gaussian -0.29 0.11
+            - baryon_parameters.M1_z0_cen = gaussian 12.00 0.06
+
+
+#############################
+###   IA model variants   ###
+#############################
 
     no_ia:  # no IA
         pipeline:
@@ -94,6 +134,11 @@ components:
             - intrinsic_alignment_parameters.alpha1 = gaussian 0.0 3.0
             - intrinsic_alignment_parameters.alpha2 = gaussian 0.0 3.0
 
+
+#############################
+###   Shear calibration   ###
+#############################
+
     mean_zero_shear_corr:  # set the mean of the shear calibration priors to zero
         priors:
             - shear_calibration_parameters.m1 = gaussian 0.0 0.0091
@@ -101,8 +146,55 @@ components:
             - shear_calibration_parameters.m3 = gaussian 0.0 0.0076
             - shear_calibration_parameters.m4 = gaussian 0.0 0.0076
 
+    sample_shear_bias:
+        values:
+            - shear_calibration_parameters.m1 = -0.1  -0.0063  0.1
+            - shear_calibration_parameters.m2 = -0.1  -0.0198  0.1
+            - shear_calibration_parameters.m3 = -0.1  -0.0241  0.1
+            - shear_calibration_parameters.m4 = -0.1  -0.0369  0.1
+        priors:
+            - shear_calibration_parameters.m1 = gaussian -0.0063 0.0091
+            - shear_calibration_parameters.m2 = gaussian -0.0198 0.0078
+            - shear_calibration_parameters.m3 = gaussian -0.0241 0.0076
+            - shear_calibration_parameters.m4 = gaussian -0.0369 0.0076
+
+    fixed_shear_bias:
+        values:
+            - shear_calibration_parameters.m1 = -0.0063
+            - shear_calibration_parameters.m2 = -0.0198
+            - shear_calibration_parameters.m3 = -0.0241
+            - shear_calibration_parameters.m4 = -0.0369
+        priors:
+            - del shear_calibration_parameters
+
+    sample_shear_bias_blue:
+        values:
+            - shear_calibration_parameters.m1 = -0.1  -0.0129  0.1
+            - shear_calibration_parameters.m2 = -0.1  -0.0180  0.1
+            - shear_calibration_parameters.m3 = -0.1  -0.0203  0.1
+            - shear_calibration_parameters.m4 = -0.1  -0.0356  0.1
+        priors:
+            - shear_calibration_parameters.m1 = gaussian -0.0129 0.0091
+            - shear_calibration_parameters.m2 = gaussian -0.0180 0.0078
+            - shear_calibration_parameters.m3 = gaussian -0.0203 0.0076
+            - shear_calibration_parameters.m4 = gaussian -0.0356 0.0076
+
+    fixed_shear_bias_blue:
+        values:
+            - shear_calibration_parameters.m1 = -0.0129
+            - shear_calibration_parameters.m2 = -0.0180
+            - shear_calibration_parameters.m3 = -0.0203
+            - shear_calibration_parameters.m4 = -0.0356
+        priors:
+            - del shear_calibration_parameters
+
+
+##########################
+### Various scale cuts ###
+##########################
+
     # fiducial DES shear scale cuts for 2pt_like
-    scale_cuts_shear_2pt:
+    scale_cuts_shear_d22_2pt:
         params:
             - 2pt_like.angle_range_shear_cl_1_1 = 0.0 742.7
             - 2pt_like.angle_range_shear_cl_2_1 = 0.0 341.0
@@ -116,7 +208,7 @@ components:
             - 2pt_like.angle_range_shear_cl_4_4 = 0.0 367.9
 
     # fiducial DES shear scale cuts for sacc_like
-    scale_cuts_shear_sacc:
+    scale_cuts_shear_d22_sacc:
         params:
             - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 742.7
             - sacc_like.angle_range_cl_ee_wl_0_wl_1 = 0.0 341.0
@@ -129,31 +221,26 @@ components:
             - sacc_like.angle_range_cl_ee_wl_2_wl_3 = 0.0 269.4
             - sacc_like.angle_range_cl_ee_wl_3_wl_3 = 0.0 367.9
 
-    # fiducial kappa x shear scale cuts for sacc_like
-    scale_cuts_cross:
-        params:
-            - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 2000.0
-            - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 2000.0
-            - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 2000.0
-            - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2000.0
 
-
-    no_scale_cuts:
-    # remove all shear scale cuts
-        params:
-          - del 2pt_like.angle_range_shear_cl_1_1
-          - del 2pt_like.angle_range_shear_cl_2_1
-          - del 2pt_like.angle_range_shear_cl_2_2
-          - del 2pt_like.angle_range_shear_cl_3_1
-          - del 2pt_like.angle_range_shear_cl_3_2
-          - del 2pt_like.angle_range_shear_cl_3_3
-          - del 2pt_like.angle_range_shear_cl_4_1
-          - del 2pt_like.angle_range_shear_cl_4_2
-          - del 2pt_like.angle_range_shear_cl_4_3
-          - del 2pt_like.angle_range_shear_cl_4_4
 
     # scale cuts corresponding to given kmax (h / Mpc, Planck18 cosmo, logTagn = 7.8, IA = 0.44/0.0 for full/blue)
     # k = 1, 2.5, 5, 10
+    # kmax = 0.5
+    scale_cuts_shear_kappa_kmax0.5:
+        params:
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 81.7
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 115.0
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 149.9
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 182.1
+
+    scale_cuts_blue_shear_kappa_kmax0.5:
+        params:
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 99.3
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 125.5
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 150.6
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 182.7
+
+    # kmax = 1
     scale_cuts_shear_shear_kmax1:
         params:
           - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 81.6
@@ -194,7 +281,45 @@ components:
           - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 282.1
           - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 340.6
 
+    scale_cuts_shear_shear_rs_kmax1:
+      params:
+        - 2pt_like_xi.angle_range_xip_1_1 = 37.83 300.0
+        - 2pt_like_xi.angle_range_xim_1_1 = 165.74 300.0
+        - 2pt_like_xi.angle_range_xip_1_2 = 30.97 300.0
+        - 2pt_like_xi.angle_range_xim_1_2 = 132.18 300.0
+        - 2pt_like_xi.angle_range_xip_1_3 = 27.11 300.0
+        - 2pt_like_xi.angle_range_xim_1_3 = 116.61 300.0
+        - 2pt_like_xi.angle_range_xip_1_4 = 25.64 300.0
+        - 2pt_like_xi.angle_range_xim_1_4 = 111.15 300.0
+        - 2pt_like_xi.angle_range_xip_2_2 = 23.95 300.0
+        - 2pt_like_xi.angle_range_xim_2_2 = 96.93 300.0
+        - 2pt_like_xi.angle_range_xip_2_3 = 20.25 300.0
+        - 2pt_like_xi.angle_range_xim_2_3 = 82.11 300.0
+        - 2pt_like_xi.angle_range_xip_2_4 = 19.45 300.0
+        - 2pt_like_xi.angle_range_xim_2_4 = 77.55 300.0
+        - 2pt_like_xi.angle_range_xip_3_3 = 15.99 300.0
+        - 2pt_like_xi.angle_range_xim_3_3 = 65.72 300.0
+        - 2pt_like_xi.angle_range_xip_3_4 = 15.00 300.0
+        - 2pt_like_xi.angle_range_xim_3_4 = 61.01 300.0
+        - 2pt_like_xi.angle_range_xip_4_4 = 10.81 300.0
+        - 2pt_like_xi.angle_range_xim_4_4 = 54.98 300.0
 
+    # kmax = 2
+    scale_cuts_shear_kappa_kmax2:
+        params:
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 342.4
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 462.2
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 592.5
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 708.9
+
+    scale_cuts_blue_shear_kappa_kmax2:
+        params:
+          - sacc_like.angle_range_cl_0e_wl_0_ck_0 = 0.0 409.0
+          - sacc_like.angle_range_cl_0e_wl_1_ck_0 = 0.0 500.6
+          - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 593.4
+          - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 709.5
+
+    # kmax = 2.5
     scale_cuts_shear_shear_kmax2.5:
         params:
           - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 234.6
@@ -235,7 +360,31 @@ components:
           - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 780.2
           - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 929.4
 
+    scale_cuts_shear_shear_rs_kmax2.5:
+      params:
+        - 2pt_like_xi.angle_range_xip_1_1 = 5.71 300.0
+        - 2pt_like_xi.angle_range_xim_1_1 = 58.72 300.0
+        - 2pt_like_xi.angle_range_xip_1_2 = 4.59 300.0
+        - 2pt_like_xi.angle_range_xim_1_2 = 45.99 300.0
+        - 2pt_like_xi.angle_range_xip_1_3 = 4.09 300.0
+        - 2pt_like_xi.angle_range_xim_1_3 = 41.16 300.0
+        - 2pt_like_xi.angle_range_xip_1_4 = 3.97 300.0
+        - 2pt_like_xi.angle_range_xim_1_4 = 38.81 300.0
+        - 2pt_like_xi.angle_range_xip_2_2 = 7.61 300.0
+        - 2pt_like_xi.angle_range_xim_2_2 = 33.77 300.0
+        - 2pt_like_xi.angle_range_xip_2_3 = 6.03 300.0
+        - 2pt_like_xi.angle_range_xim_2_3 = 29.15 300.0
+        - 2pt_like_xi.angle_range_xip_2_4 = 6.39 300.0
+        - 2pt_like_xi.angle_range_xim_2_4 = 27.53 300.0
+        - 2pt_like_xi.angle_range_xip_3_3 = 5.75 300.0
+        - 2pt_like_xi.angle_range_xim_3_3 = 23.31 300.0
+        - 2pt_like_xi.angle_range_xip_3_4 = 4.68 300.0
+        - 2pt_like_xi.angle_range_xim_3_4 = 21.58 300.0
+        - 2pt_like_xi.angle_range_xip_4_4 = 4.64 300.0
+        - 2pt_like_xi.angle_range_xim_4_4 = 20.08 300.0
 
+
+    # kmax = 5
     scale_cuts_shear_shear_kmax5:
         params:
           - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 578.2
@@ -276,7 +425,31 @@ components:
           - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 1867.3
           - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 2212.8
 
+    scale_cuts_shear_shear_rs_kmax5:
+      params:
+        - 2pt_like_xi.angle_range_xip_1_1 = 2.70 300.0
+        - 2pt_like_xi.angle_range_xim_1_1 = 23.95 300.0
+        - 2pt_like_xi.angle_range_xip_1_2 = 2.14 300.0
+        - 2pt_like_xi.angle_range_xim_1_2 = 18.80 300.0
+        - 2pt_like_xi.angle_range_xip_1_3 = 1.94 300.0
+        - 2pt_like_xi.angle_range_xim_1_3 = 16.83 300.0
+        - 2pt_like_xi.angle_range_xip_1_4 = 1.86 300.0
+        - 2pt_like_xi.angle_range_xim_1_4 = 16.15 300.0
+        - 2pt_like_xi.angle_range_xip_2_2 = 1.68 300.0
+        - 2pt_like_xi.angle_range_xim_2_2 = 14.10 300.0
+        - 2pt_like_xi.angle_range_xip_2_3 = 1.42 300.0
+        - 2pt_like_xi.angle_range_xim_2_3 = 11.95 300.0
+        - 2pt_like_xi.angle_range_xip_2_4 = 1.35 300.0
+        - 2pt_like_xi.angle_range_xim_2_4 = 11.60 300.0
+        - 2pt_like_xi.angle_range_xip_3_3 = 1.21 300.0
+        - 2pt_like_xi.angle_range_xim_3_3 = 9.62 300.0
+        - 2pt_like_xi.angle_range_xip_3_4 = 1.08 300.0
+        - 2pt_like_xi.angle_range_xim_3_4 = 9.01 300.0
+        - 2pt_like_xi.angle_range_xip_4_4 = 0.97 300.0
+        - 2pt_like_xi.angle_range_xim_4_4 = 8.02 300.0
 
+
+    # kmax = 10
     scale_cuts_shear_shear_kmax10:
         params:
           - sacc_like.angle_range_cl_ee_wl_0_wl_0 = 0.0 1303.9
@@ -317,6 +490,29 @@ components:
           - sacc_like.angle_range_cl_0e_wl_2_ck_0 = 0.0 4126.0
           - sacc_like.angle_range_cl_0e_wl_3_ck_0 = 0.0 4903.7
 
+    scale_cuts_shear_shear_rs_kmax10:
+      params:
+        - 2pt_like_xi.angle_range_xip_1_1 = 1.26 300.0
+        - 2pt_like_xi.angle_range_xim_1_1 = 10.51 300.0
+        - 2pt_like_xi.angle_range_xip_1_2 = 0.98 300.0
+        - 2pt_like_xi.angle_range_xim_1_2 = 8.21 300.0
+        - 2pt_like_xi.angle_range_xip_1_3 = 0.91 300.0
+        - 2pt_like_xi.angle_range_xim_1_3 = 7.46 300.0
+        - 2pt_like_xi.angle_range_xip_1_4 = 0.88 300.0
+        - 2pt_like_xi.angle_range_xim_1_4 = 7.28 300.0
+        - 2pt_like_xi.angle_range_xip_2_2 = 0.81 300.0
+        - 2pt_like_xi.angle_range_xim_2_2 = 6.37 300.0
+        - 2pt_like_xi.angle_range_xip_2_3 = 0.64 300.0
+        - 2pt_like_xi.angle_range_xim_2_3 = 5.35 300.0
+        - 2pt_like_xi.angle_range_xip_2_4 = 0.62 300.0
+        - 2pt_like_xi.angle_range_xim_2_4 = 5.32 300.0
+        - 2pt_like_xi.angle_range_xip_3_3 = 0.57 300.0
+        - 2pt_like_xi.angle_range_xim_3_3 = 4.44 300.0
+        - 2pt_like_xi.angle_range_xip_3_4 = 0.54 300.0
+        - 2pt_like_xi.angle_range_xim_3_4 = 3.97 300.0
+        - 2pt_like_xi.angle_range_xip_4_4 = 0.50 300.0
+        - 2pt_like_xi.angle_range_xim_4_4 = 3.59 300.0
+
 
     del_scale_cuts_shear_shear:
     # remove all shear-shear scale cuts
@@ -339,3 +535,41 @@ components:
             - del sacc_like.angle_range_cl_0e_wl_1_ck_0
             - del sacc_like.angle_range_cl_0e_wl_2_ck_0
             - del sacc_like.angle_range_cl_0e_wl_3_ck_0
+
+    del_scale_cuts_shear_2pt:
+    # remove all shear scale cuts
+        params:
+          - del 2pt_like.angle_range_shear_cl_1_1
+          - del 2pt_like.angle_range_shear_cl_2_1
+          - del 2pt_like.angle_range_shear_cl_2_2
+          - del 2pt_like.angle_range_shear_cl_3_1
+          - del 2pt_like.angle_range_shear_cl_3_2
+          - del 2pt_like.angle_range_shear_cl_3_3
+          - del 2pt_like.angle_range_shear_cl_4_1
+          - del 2pt_like.angle_range_shear_cl_4_2
+          - del 2pt_like.angle_range_shear_cl_4_3
+          - del 2pt_like.angle_range_shear_cl_4_4
+
+    del_scale_cuts_shear_2pt_xi:
+      params:
+        - del 2pt_like_xi.angle_range_xip_1_1
+        - del 2pt_like_xi.angle_range_xim_1_1
+        - del 2pt_like_xi.angle_range_xip_1_2
+        - del 2pt_like_xi.angle_range_xim_1_2
+        - del 2pt_like_xi.angle_range_xip_1_3
+        - del 2pt_like_xi.angle_range_xim_1_3
+        - del 2pt_like_xi.angle_range_xip_1_4
+        - del 2pt_like_xi.angle_range_xim_1_4
+        - del 2pt_like_xi.angle_range_xip_2_2
+        - del 2pt_like_xi.angle_range_xim_2_2
+        - del 2pt_like_xi.angle_range_xip_2_3
+        - del 2pt_like_xi.angle_range_xim_2_3
+        - del 2pt_like_xi.angle_range_xip_2_4
+        - del 2pt_like_xi.angle_range_xim_2_4
+        - del 2pt_like_xi.angle_range_xip_3_3
+        - del 2pt_like_xi.angle_range_xim_3_3
+        - del 2pt_like_xi.angle_range_xip_3_4
+        - del 2pt_like_xi.angle_range_xim_3_4
+        - del 2pt_like_xi.angle_range_xip_4_4
+        - del 2pt_like_xi.angle_range_xim_4_4
+
