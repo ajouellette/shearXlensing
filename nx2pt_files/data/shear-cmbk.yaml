@@ -1,0 +1,122 @@
+#!include ../binning.yaml
+nside: 2048
+#binning: *lin_30_3500
+binning: *ck_cross
+workspace_dir: "/scratch/aaronjo2/nmt_workspaces"
+
+tracer_list:
+#!include tracers.yaml
+
+tracers:
+  wl: *wl_desy3
+  wl_blue: *wl_desy3_blue
+  ck_pol: *ck_spt3g_pol
+  ck_mv: *ck_spt3g_mv
+  ck_mv_prfhd: *ck_spt3g_mv_prfhd
+  ck_mv_xilc: *ck_spt3g_mv_xilc
+  ck_mv_mh: *ck_spt3g_mv_mh
+
+cross_spectra_pol:
+  list:
+    - tracers: [wl, ck_pol]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_pol_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G pol-only lensing"
+
+cross_spectra_mv:
+  list:
+    - tracers: [wl, ck_mv]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G GMV lensing"
+
+cross_spectra_mv_prfhd:
+  list:
+    - tracers: [wl, ck_mv_prfhd]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_prfhd_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G profile-hardened GMV lensing"
+
+cross_spectra_mv_xilc:
+  list:
+    - tracers: [wl, ck_mv_xilc]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_xilc_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G xILC GMV lensing"
+
+cross_spectra_mv_mh:
+  list:
+    - tracers: [wl, ck_mv_mh]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_update_spt3g_mv_mh_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 shear x SPT-3G grad cleaned GMV lensing"
+
+cross_spectra_pol_blue:
+  list:
+    - tracers: [wl_blue, ck_pol]
+  covariance: True
+  interbin_cov: True
+  save_sacc:
+    file: "data/cross_cls/data/desy3_blue_spt3g_pol_nside{nside}_lmax3500_log.fits"
+    metadata:
+      description: "DES-Y3 blue shear x SPT-3G pol-only lensing"
+
+# compute covariance between different lensing variations
+#cross_spectra_diff_pol_mv:
+#  list:
+#    - tracers: [wl, ck_mv]
+#    - tracers: [wl, ck_pol]
+#  covariance: True
+#  interbin_cov: True
+#  save_sacc:
+#    file: "data/cross_cls/data/desy3_update_spt3g_diff_pol_mv_nside{nside}_lmax3500_log.fits"
+#    metadata:
+#      description: "DES Y3 shear x SPT-3G Pol and GMV lensing"
+#
+#cross_spectra_diff_pol_prfhd:
+#  list:
+#    - tracers: [wl, ck_mv_prfhd]
+#    - tracers: [wl, ck_pol]
+#  covariance: True
+#  interbin_cov: True
+#  save_sacc:
+#    file: "data/cross_cls/data/desy3_update_spt3g_diff_pol_prfhd_nside{nside}_lmax3500_log.fits"
+#    metadata:
+#      description: "DES Y3 shear x SPT-3G Pol and Prof lensing"
+#
+#cross_spectra_diff_pol_xilc:
+#  list:
+#    - tracers: [wl, ck_mv_xilc]
+#    - tracers: [wl, ck_pol]
+#  covariance: True
+#  interbin_cov: True
+#  save_sacc:
+#    file: "data/cross_cls/data/desy3_update_spt3g_diff_pol_xilc_nside{nside}_lmax3500_log.fits"
+#    metadata:
+#      description: "DES Y3 shear x SPT-3G Pol and xILC lensing"
+#
+#cross_spectra_diff_pol_mh:
+#  list:
+#    - tracers: [wl, ck_mv_mh]
+#    - tracers: [wl, ck_pol]
+#  covariance: True
+#  interbin_cov: True
+#  save_sacc:
+#    file: "data/cross_cls/data/desy3_update_spt3g_diff_pol_mh_nside{nside}_lmax3500_log.fits"
+#    metadata:
+#      description: "DES Y3 shear x SPT-3G Pol and MH lensing"
