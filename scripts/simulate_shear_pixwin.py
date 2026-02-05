@@ -65,7 +65,7 @@ def make_shear_maps(cat, nside):
     return wg_maps, shot_noise
 
 
-def process_sims_map_method(cat, sim_maps, nside, bins):
+def process_sims_map_method(cat, sim_maps, nside, bins, noise_level=0):
     result = dict(ell_eff=bins.get_effective_ells(), cls_out=[], cls_out_tot=[], shot_noise=[])
     # precompute wksp
     cat[f"ipix_{nside}"] = hp.ang2pix(nside, cat["ra"], cat["dec"], lonlat=True)
@@ -77,7 +77,7 @@ def process_sims_map_method(cat, sim_maps, nside, bins):
     for i, maps in enumerate(sim_maps):
         with Timer(f"processing sim {i+1} / {len(sim_maps)}"):
             maps = hp.read_map(maps, field=None)
-            sample_shear_cat(maps, cat)
+            sample_shear_cat(maps, cat, noise_level=noise_level)
             wg_maps, shot_noise = make_shear_maps(cat, nside)
             field = nmt.NmtField(wmap, wg_maps, spin=2, masked_on_input=True, n_iter=0)
             pcl = nmt.compute_coupled_cell(field, field)
@@ -92,7 +92,7 @@ def process_sims_map_method(cat, sim_maps, nside, bins):
     return result
 
 
-def process_sims_cat_method(cat, sim_maps, nside, bins):
+def process_sims_cat_method(cat, sim_maps, nside, bins, noise_level=0):
     result = dict(ell_eff=bins.get_effective_ells(), cls_out=[])
     # precompute wksp
     field = nmt.NmtFieldCatalog([cat["ra"], cat["dec"]], cat["weight"], None,
@@ -103,7 +103,7 @@ def process_sims_cat_method(cat, sim_maps, nside, bins):
     for i, maps in enumerate(sim_maps):
         with Timer(f"processing sim {i+1} / {len(sim_maps)}"):
             maps = hp.read_map(maps, field=None)
-            sample_shear_cat(maps, cat)
+            sample_shear_cat(maps, cat, noise_level=noise_level)
             field = nmt.NmtFieldCatalog([cat["ra"], cat["dec"]], cat["weight"], [cat["g_1"], cat["g_2"]],
                                         3*nside-1, spin=2, lonlat=True)
             pcl = nmt.compute_coupled_cell(field, field)
@@ -150,10 +150,10 @@ def main():
 
     if args.cat_method:
         print("Using catalog-based method")
-        result = process_sims_cat_method(cat, sim_files, args.nside, bins)
+        result = process_sims_cat_method(cat, sim_files, args.nside, bins, noise_level=args.shape_noise)
     else:
         print("Using map-based method")
-        result = process_sims_map_method(cat, sim_files, args.nside, bins)
+        result = process_sims_map_method(cat, sim_files, args.nside, bins, noise_level=args.shape_noise)
 
     
     np.savez(args.output, **result)
