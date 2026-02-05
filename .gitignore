@@ -1,9 +1,10 @@
 __pycache__/
 .ipynb_checkpoints/
 
-./figures/
-./data/
-./sims/
+figures/*
+data/*
+!nx2pt_files/data/*
+sims/*
 campaigns/*/
 logs/
 *.out
