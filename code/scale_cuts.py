@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats, interpolate
 import pyccl as ccl
+import sacc
 import nx2pt
 
 
@@ -91,3 +92,37 @@ def get_ell_cut_nl(cosmo, tracer1, tracer2, thresh=0.95):
     # interpolate ratio to find ell cut
     ell_cut = interpolate.interp1d(ratio, ell)(thresh)
     return ell_cut
+
+
+def get_snr(s, theory=None, kcut=None, use_model=False):
+    """Get data vector SNR, optionally applying k-space scale cuts."""
+    if (use_model or kcut is not None) and theory is None:
+        raise ValueError("Need to provide a CCLTheory object to use kcut or use_model")
+    s = s.copy()
+    # remove all bmodes
+    for dtype in s.get_data_types():
+        if 'b' in dtype:
+            s.remove_selection(data_type=dtype)
+    ells = np.geomspace(2, 6100, 250)
+    model = []
+    if kcut is not None:
+        for tr1, tr2 in s.get_tracer_combinations():
+            ell_cut = get_kmax_ell_cut(theory.cosmo, theory.tracers[tr1]["ccl_tracer"], theory.tracers[tr2]["ccl_tracer"], kcut)
+            s.remove_selection(tracers=(tr1, tr2), ell__gt=ell_cut)
+    if use_model:
+        for tr1, tr2 in s.get_tracer_combinations():
+            inds = s.indices(tracers=(tr1, tr2))
+            if len(inds) > 0:
+                bpws = s.get_bandpower_windows(inds).weight.T
+                model.append(nx2pt.bin_theory_cl(theory.get_cl(tr1, tr2, ells), bpws, ell=ells))
+        data = np.hstack(model)
+        Nd = 0
+    else:
+        data = s.mean
+        Nd = len(data)
+    #print(len(s.mean), "data points")
+    snr = np.sqrt(data @ np.linalg.solve(s.covariance.covmat, data) - Nd)
+    return snr
+
+# vectorize over kcut
+get_snr = np.vectorize(get_snr, excluded=(0, 1), otypes=[float])
