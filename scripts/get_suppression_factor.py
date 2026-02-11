@@ -38,7 +38,8 @@ def calc_sk_samples(chain, w_cutoff=1e-6, kgrid=np.geomspace(0.01, 10, 50), max_
                 for i in range(len(use_samples)))
     weights = chain.weights[use_samples]
     weights /= np.sum(weights)
-    res = {"spks": np.array(spks), "k": kgrid, "weights": weights}
+    k_h_grids = np.expand_dims(kgrid, 0) / np.expand_dims(h0, 1)
+    res = {"spks": np.array(spks), "k": kgrid, "k_h": k_h_grids, "weights": weights}
     return res
 
 
