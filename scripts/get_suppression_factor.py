@@ -20,7 +20,7 @@ def get_spk(params, kgrid, return_spk_h=False):
     spk = cosmo_fb.nonlin_power(kgrid, 1) / cosmo_dm.nonlin_power(kgrid, 1)
     if not return_spk_h:
         return spk
-    spk_h = cosmo_fb.nonlin_power(kgrid / params["h"], 1) / cosmo_dm.nonlin_power(kgrid / params["h"], 1)
+    spk_h = cosmo_fb.nonlin_power(kgrid * params["h"], 1) / cosmo_dm.nonlin_power(kgrid * params["h"], 1)
     return spk, spk_h
 
 
@@ -46,8 +46,7 @@ def calc_sk_samples(chain, kgrid=np.geomspace(0.01, 10, 50), do_kh=False, sample
     spks = np.array(spks)
     weights = chain.weights[use_samples]
     weights /= np.sum(weights)
-    k_h_grids = np.expand_dims(kgrid, 0) / np.expand_dims(h0, 1)
-    res = {"k": kgrid, "k_h": k_h_grids, "weights": weights}
+    res = {"k": kgrid, "weights": weights}
     if not do_kh:
         return res | {"spk": spks}
     return res | {"spk": spks[:,0], "spk_h": spks[:,1]}
