@@ -43,15 +43,14 @@ def calc_sk_samples(chain, kgrid=np.geomspace(0.01, 10, 50), do_kh=False, sample
                 delayed(get_spk)(dict(omega_m=Om[i], omega_b=Ob[i], h=h0[i], n_s=n_s[i], a_s=A_s[i], logt_agn=logTagn[i]),
                     kgrid, return_spk_h=do_kh)
                 for i in range(len(use_samples)))
+    spks = np.array(spks)
     weights = chain.weights[use_samples]
     weights /= np.sum(weights)
     k_h_grids = np.expand_dims(kgrid, 0) / np.expand_dims(h0, 1)
     res = {"k": kgrid, "k_h": k_h_grids, "weights": weights}
     if not do_kh:
-        spk = np.array(spks)
-        return res | {"spk": np.array(spk)}
-    spk, spk_h = spks
-    return res | {"spk": np.array(spk), "spk_h": np.array(spk_h)}
+        return res | {"spk": spks}
+    return res | {"spk": spks[:,0], "spk_h": spks[:,1]}
 
 
 def main():
