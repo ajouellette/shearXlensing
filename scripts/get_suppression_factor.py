@@ -21,8 +21,11 @@ def get_spk(params, kgrid):
     return spk
 
 
-def calc_sk_samples(chain, w_cutoff=1e-6, kgrid=np.geomspace(0.01, 10, 50), max_inner_threads=1):
-    use_samples = np.nonzero(chain.weights > w_cutoff * np.max(chain.weights))[0]
+def calc_sk_samples(chain, kgrid=np.geomspace(0.01, 10, 50), samples=2000, max_inner_threads=1):
+    if samples < len(chain.weights):
+        use_samples = np.random.choice(len(chain.weights), size=samples, replace=False, p=chain.weights)
+    else:
+        use_samples = np.arange(len(chain.weights))
     spks = []
     Om = chain.getParams().omega_m[use_samples]
     Ob = chain.getParams().omega_b[use_samples]
@@ -47,6 +50,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("chain")
     parser.add_argument("-o", "--output")
+    parser.add_argument("-n", "--n-samples", type=int, default=2000)
     parser.add_argument("--max-inner-threads", type=int, default=1)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
@@ -58,7 +62,7 @@ def main():
         print(f"output file {output} already exists")
         sys.exit(1)
     
-    res = calc_sk_samples(chain, max_inner_threads=args.max_inner_threads)
+    res = calc_sk_samples(chain, samples=args.n_samples, max_inner_threads=args.max_inner_threads)
     print("saving to", output)
     np.savez(output, **res)
 
