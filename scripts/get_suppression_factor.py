@@ -57,9 +57,9 @@ def calc_sk_samples(chain, kgrid=np.geomspace(0.01, 10, 50), do_kh=False, sample
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("chain")
-    parser.add_argument("-o", "--output")
-    parser.add_argument("-n", "--n-samples", type=int, default=2000)
-    parser.add_argument("--do-kh", action="store_true")
+    parser.add_argument("-o", "--output", help="output file")
+    parser.add_argument("-n", "--n-samples", type=int, default=2000, help="number of samples to use (default: %(default)s)")
+    parser.add_argument("--do-kh", action="store_true", help="additionally store Sk as function of kh")
     parser.add_argument("--max-inner-threads", type=int, default=1)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
