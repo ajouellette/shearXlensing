@@ -17,6 +17,9 @@ def get_latex_labels(param_names):
     # intrinsic alignment
     latex = latex | dict(a1="A_1", a2="A_2", alpha1="\\alpha_1", alpha2="\\alpha_2", bias_ta="b_\\text{ta}")
     latex = latex | {f"a1_{i}": f"A_1^{{({i})}}" for i in range(10)}
+    # BCM parameters
+    latex = latex | dict(m_c="\\log M_\\text{c}", eta="\\log \\eta", beta="\\log \\beta", m1_z0_cen="\\log M_{1,z_0,\\text{cen}}",
+                         m_inn="\\log M_\\text{inn}", theta_out="\\log \\theta_\\text{out}", theta_inn="\\log \\theta_\\text{inn}")
     # nusiance parameters
     latex = latex | {f"m{i}": f"m_{i}" for i in range(10)}
     latex = latex | {f"bias_{i}": f"\\Delta z_{i}" for i in range(10)}
